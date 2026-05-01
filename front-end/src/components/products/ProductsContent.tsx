@@ -17,6 +17,7 @@ export default function ProductsContent() {
     Promise.all([
       get<{ results: Product[] }>('/api/products/'),
       get<Category[]>('/api/categories/'),
+      get<Category[]>('/api/products/categories/')
     ])
       .then(([productsData, categoriesData]) => {
         setProducts(productsData.results);

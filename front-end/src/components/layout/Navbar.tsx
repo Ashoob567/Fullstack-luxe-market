@@ -93,9 +93,9 @@ export default function Navbar() {
     router.push("/");
   };
 
-  const userInitials = user?.name
-    ? user.name.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2)
-    : "U";
+  const userInitials = user
+  ? `${user.firstName?.[0] ?? ""}${user.lastName?.[0] ?? ""}`.toUpperCase()
+  : "U";
 
   return (
     <header
@@ -232,7 +232,7 @@ export default function Navbar() {
               <DropdownMenuTrigger >
                 <button className="flex items-center gap-1.5 ml-1 p-1 rounded-full hover:bg-slate-100 transition-colors group focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
                   <Avatar className="h-8 w-8 ring-2 ring-blue-100 group-hover:ring-blue-300 transition-all">
-                    <AvatarImage src={user.avatar} alt={user.name} />
+                    <AvatarImage src={undefined} alt={`${user.firstName} ${user.lastName}`} />
                     <AvatarFallback className="bg-gradient-to-br from-blue-600 to-indigo-700 text-white text-xs font-bold">
                       {userInitials}
                     </AvatarFallback>
@@ -242,7 +242,7 @@ export default function Navbar() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-52 mt-1 shadow-lg border-slate-100">
                 <DropdownMenuLabel className="font-normal">
-                  <p className="text-sm font-semibold text-slate-800 truncate">{user.name}</p>
+                  <p className="text-sm font-semibold text-slate-800 truncate">{user.firstName} {user.lastName}</p>
                   <p className="text-xs text-slate-500 truncate">{user.email}</p>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
@@ -284,13 +284,10 @@ export default function Navbar() {
                Sheet is kept uncontrolled (no `open` prop) so Radix handles SSR correctly;
                we sync state via onOpenChange for the mobile auth footer display. */}
           <Sheet onOpenChange={setMobileOpen}>
-            <SheetTrigger >
-              <button
-                className="lg:hidden p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-full transition-colors ml-1"
-                aria-label="Open menu"
-              >
+            <SheetTrigger className="p-2" >
+              
                 <Menu size={20} />
-              </button>
+            
             </SheetTrigger>
             <SheetContent side="right" className="w-72 p-0 flex flex-col">
               <SheetHeader className="px-5 pt-5 pb-3 border-b border-slate-100">
@@ -364,13 +361,13 @@ export default function Navbar() {
                   <div className="space-y-2">
                     <div className="flex items-center gap-3 px-1 py-1">
                       <Avatar className="h-9 w-9 ring-2 ring-blue-100">
-                        <AvatarImage src={user.avatar} alt={user.name} />
+                        <AvatarImage src={undefined} alt={`${user.firstName} ${user.lastName}`} />
                         <AvatarFallback className="bg-gradient-to-br from-blue-600 to-indigo-700 text-white text-xs font-bold">
                           {userInitials}
                         </AvatarFallback>
                       </Avatar>
                       <div className="min-w-0">
-                        <p className="text-sm font-semibold text-slate-800 truncate">{user.name}</p>
+                        <p className="text-sm font-semibold text-slate-800 truncate">{user.firstName} {user.lastName}</p>
                         <p className="text-xs text-slate-500 truncate">{user.email}</p>
                       </div>
                     </div>

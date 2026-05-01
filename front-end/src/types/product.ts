@@ -1,5 +1,6 @@
 export interface ProductVariant {
   id: number;
+  name:string;
   sku: string;
   size: string | null;
   color: string | null;
@@ -60,4 +61,6 @@ export interface ProductFilters {
   size?: string;
   color?: string;
   ordering?: string;
+  page?: number;
+  inStock?: boolean;
 }
