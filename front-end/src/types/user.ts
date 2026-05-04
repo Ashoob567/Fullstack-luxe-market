@@ -1,11 +1,13 @@
 export interface User {
   id: number;
   email: string;
-  firstName: string;
-  lastName: string;
+  first_name: string;
+  last_name: string;
   phone: string | null;
-  isVerified: boolean;
-  dateJoined: string;
+  is_active:boolean;
+  is_Verified: boolean;
+  created_at: string;
+  updated_at:string;
 }
 
 export interface Address {

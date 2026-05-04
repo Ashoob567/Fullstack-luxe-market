@@ -1,0 +1,19 @@
+:root {
+  --color-primary:     #3D2F1F;
+  --color-accent:      #8B6F47;
+  --color-bg:          #FAF8F4;
+  --color-surface:     #FFFFFF;
+  --color-dark-card:   #2C2416;
+  --color-text-body:   #5C4A32;
+  --color-text-muted:  #A09080;
+  --color-border:      #E8E0D5;
+  --color-tag:         #F0EBE3;
+  --color-tag-text:    #6B5344;
+  --color-btn-primary: #1A1A1A;
+  --color-image-bg:    #F5F0E8;
+  --font-display:      'Playfair Display', serif;
+  --font-body:         'DM Sans', sans-serif;
+  --radius-card:       16px;
+  --radius-btn:        8px;
+  --radius-tag:        6px;
+}

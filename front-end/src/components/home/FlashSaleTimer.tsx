@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 
 interface TimeLeft {
   days: number;
@@ -9,13 +10,40 @@ interface TimeLeft {
   seconds: number;
 }
 
+interface FlashSaleTimerProps {
+  /**
+   * ISO date string from backend
+   * Example: "2026-05-05T23:59:59Z"
+   */
+  endTime?: string | null;
+
+  /**
+   * Backend flag:
+   * product.is_flash_active OR global flash sale active
+   */
+  isActive?: boolean;
+
+  /**
+   * CTA link
+   */
+  href?: string;
+
+  /**
+   * Optional custom text
+   */
+  title?: string;
+  subtitle?: string;
+}
+
 function pad(n: number): string {
   return String(n).padStart(2, "0");
 }
 
-function calcTimeLeft(endTime: number): TimeLeft | null {
-  const diff = endTime - Date.now();
+function calcTimeLeft(endMs: number): TimeLeft | null {
+  const diff = endMs - Date.now();
+
   if (diff <= 0) return null;
+
   return {
     days: Math.floor(diff / (1000 * 60 * 60 * 24)),
     hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
@@ -29,57 +57,51 @@ interface TimerBoxProps {
   label: string;
 }
 
-function TimerBox({ value, label }: TimerBoxProps) {
-  const prevValue = useRef(value);
-  const [flip, setFlip] = useState(false);
+function TimerBox({
+  value,
+  label,
+}: TimerBoxProps) {
+  const [animate, setAnimate] =
+    useState(false);
 
   useEffect(() => {
-    if (prevValue.current !== value) {
-      setFlip(true);
-      const t = setTimeout(() => setFlip(false), 300);
-      prevValue.current = value;
-      return () => clearTimeout(t);
-    }
+    setAnimate(true);
+
+    const t = setTimeout(() => {
+      setAnimate(false);
+    }, 250);
+
+    return () => clearTimeout(t);
   }, [value]);
 
   return (
     <div
-      className="flex flex-col items-center"
+      className="flex min-w-[72px] flex-col items-center rounded-xl px-5 py-4 shadow-lg"
       style={{
         background: "#A03020",
-        borderRadius: "12px",
-        padding: "16px 20px",
-        minWidth: "72px",
-        boxShadow:
-          "0 4px 24px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.07)",
-        transition: "transform 0.15s",
       }}
     >
       <span
+        className={`block text-4xl font-bold leading-none transition ${
+          animate
+            ? "scale-95 opacity-70"
+            : "scale-100 opacity-100"
+        }`}
         style={{
-          fontFamily: "'Georgia', 'Times New Roman', serif",
-          fontWeight: 700,
-          fontSize: "clamp(2.5rem, 5vw, 3rem)",
           color: "#ffffff",
-          lineHeight: 1,
-          letterSpacing: "-0.02em",
-          display: "block",
-          transition: "opacity 0.15s, transform 0.15s",
-          opacity: flip ? 0.3 : 1,
-          transform: flip ? "translateY(-4px)" : "translateY(0)",
+          fontFamily:
+            "'Georgia','Times New Roman',serif",
         }}
       >
         {value}
       </span>
+
       <span
+        className="mt-2 text-[10px] uppercase tracking-[0.22em]"
         style={{
-          fontSize: "10px",
-          textTransform: "uppercase",
-          letterSpacing: "0.2em",
           color: "#FFB3A7",
-          marginTop: "8px",
-          fontFamily: "'Georgia', serif",
-          fontWeight: 400,
+          fontFamily:
+            "'Georgia','Times New Roman',serif",
         }}
       >
         {label}
@@ -88,224 +110,157 @@ function TimerBox({ value, label }: TimerBoxProps) {
   );
 }
 
-export default function FlashSaleTimer() {
-  const endTimeRef = useRef<number>(Date.now() + 24 * 60 * 60 * 1000);
-  const [timeLeft, setTimeLeft] = useState<TimeLeft | null>(() =>
-    calcTimeLeft(endTimeRef.current)
-  );
+export default function FlashSaleTimer({
+  endTime,
+  isActive = true,
+  href = "/products?flash_sale=true",
+  title = "Flash Sale",
+  subtitle = "Prices drop at midnight — grab yours before it's gone.",
+}: FlashSaleTimerProps) {
+  const endMs = useMemo(() => {
+    if (!endTime) return null;
+
+    const parsed =
+      new Date(endTime).getTime();
+
+    return Number.isNaN(parsed)
+      ? null
+      : parsed;
+  }, [endTime]);
+
+  const [timeLeft, setTimeLeft] =
+    useState<TimeLeft | null>(null);
 
   useEffect(() => {
-    const id = setInterval(() => {
-      setTimeLeft(calcTimeLeft(endTimeRef.current));
-    }, 1000);
-    return () => clearInterval(id);
-  }, []);
+    if (!isActive || !endMs) {
+      setTimeLeft(null);
+      return;
+    }
+
+    const update = () => {
+      setTimeLeft(
+        calcTimeLeft(endMs)
+      );
+    };
+
+    update();
+
+    const id =
+      window.setInterval(update, 1000);
+
+    return () =>
+      window.clearInterval(id);
+  }, [endMs, isActive]);
+
+  if (!isActive || !endMs) {
+    return null;
+  }
 
   const ended = timeLeft === null;
 
   const segments = ended
     ? []
     : [
-        { value: pad(timeLeft!.days), label: "Days" },
-        { value: pad(timeLeft!.hours), label: "Hours" },
-        { value: pad(timeLeft!.minutes), label: "Minutes" },
-        { value: pad(timeLeft!.seconds), label: "Seconds" },
+        {
+          value: pad(timeLeft.days),
+          label: "Days",
+        },
+        {
+          value: pad(timeLeft.hours),
+          label: "Hours",
+        },
+        {
+          value: pad(timeLeft.minutes),
+          label: "Minutes",
+        },
+        {
+          value: pad(timeLeft.seconds),
+          label: "Seconds",
+        },
       ];
 
   return (
-    <section
-      style={{
-        background: "#C0392B",
-        width: "100%",
-        padding: "56px 16px",
-        position: "relative",
-        overflow: "hidden",
-      }}
-    >
-      {/* Subtle noise texture overlay */}
-      <div
-        aria-hidden
-        style={{
-          position: "absolute",
-          inset: 0,
-          backgroundImage:
-            "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E\")",
-          opacity: 0.35,
-          pointerEvents: "none",
-        }}
-      />
+    <section className="relative overflow-hidden bg-[#C0392B] px-4 py-14">
+      {/* Texture */}
+      <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.12),transparent_25%),radial-gradient(circle_at_80%_30%,rgba(255,255,255,0.08),transparent_20%)]" />
 
-      {/* Decorative diagonal stripe — top-left corner */}
-      <div
-        aria-hidden
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          width: "180px",
-          height: "180px",
-          background:
-            "repeating-linear-gradient(-45deg, rgba(255,255,255,0.03) 0px, rgba(255,255,255,0.03) 1px, transparent 1px, transparent 10px)",
-          pointerEvents: "none",
-        }}
-      />
-
-      <div
-        style={{
-          maxWidth: "768px",
-          margin: "0 auto",
-          textAlign: "center",
-          position: "relative",
-          zIndex: 1,
-        }}
-      >
+      <div className="relative z-10 mx-auto max-w-4xl text-center">
         {/* Eyebrow */}
-        <p
-          style={{
-            fontSize: "11px",
-            textTransform: "uppercase",
-            letterSpacing: "0.2em",
-            color: "#FFB3A7",
-            marginBottom: "12px",
-            fontFamily: "'Georgia', serif",
-          }}
-        >
+        <p className="mb-3 text-[11px] uppercase tracking-[0.22em] text-[#FFB3A7]">
           Limited Time Offer
         </p>
 
-        {/* Headline */}
+        {/* Title */}
         <h2
+          className="mb-2 text-4xl font-bold md:text-5xl"
           style={{
-            fontFamily: "'Georgia', 'Times New Roman', serif",
-            fontWeight: 700,
-            fontSize: "clamp(2.25rem, 6vw, 3rem)",
             color: "#ffffff",
-            marginBottom: "8px",
-            letterSpacing: "-0.02em",
-            lineHeight: 1.05,
+            fontFamily:
+              "'Georgia','Times New Roman',serif",
           }}
         >
-          Flash Sale
+          {title}
         </h2>
 
         {/* Subtitle */}
-        <p
-          style={{
-            fontSize: "14px",
-            color: "#FFB3A7",
-            marginBottom: "40px",
-            fontFamily: "'Georgia', serif",
-            fontStyle: "italic",
-          }}
-        >
-          Prices drop at midnight — grab yours before it&apos;s gone.
+        <p className="mb-10 text-sm italic text-[#FFB3A7] md:text-base">
+          {subtitle}
         </p>
 
-        {/* Timer row or ended state */}
+        {/* Ended */}
         {ended ? (
-          <div
-            style={{
-              background: "#A03020",
-              borderRadius: "12px",
-              padding: "24px 32px",
-              display: "inline-block",
-              boxShadow: "0 4px 24px rgba(0,0,0,0.18)",
-            }}
-          >
-            <span
-              style={{
-                fontFamily: "'Georgia', serif",
-                fontWeight: 700,
-                fontSize: "2rem",
-                color: "#ffffff",
-                letterSpacing: "-0.01em",
-              }}
-            >
+          <div className="inline-block rounded-xl bg-[#A03020] px-8 py-6 shadow-xl">
+            <p className="text-3xl font-bold text-white">
               Sale Ended
-            </span>
-            <p
-              style={{
-                fontSize: "12px",
-                color: "#FFB3A7",
-                marginTop: "6px",
-                letterSpacing: "0.1em",
-                textTransform: "uppercase",
-              }}
-            >
-              Thank you for shopping with us
+            </p>
+
+            <p className="mt-2 text-xs uppercase tracking-[0.18em] text-[#FFB3A7]">
+              Thank you for shopping
             </p>
           </div>
         ) : (
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "flex-start",
-              gap: "clamp(12px, 3vw, 32px)",
-              flexWrap: "wrap",
-            }}
-          >
-            {segments.map((seg, i) => (
-              <>
-                <TimerBox key={seg.label} value={seg.value} label={seg.label} />
-                {i < segments.length - 1 && (
-                  <span
-                    key={`sep-${i}`}
-                    aria-hidden
-                    style={{
-                      color: "#ffffff",
-                      fontSize: "2rem",
-                      fontWeight: 700,
-                      alignSelf: "center",
-                      marginBottom: "18px",
-                      opacity: 0.7,
-                      fontFamily: "'Georgia', serif",
-                      lineHeight: 1,
-                    }}
+          <>
+            {/* Timer */}
+            <div className="flex flex-wrap items-start justify-center gap-3 md:gap-6">
+              {segments.map(
+                (seg, i) => (
+                  <Fragment
+                    key={seg.label}
                   >
-                    :
-                  </span>
-                )}
-              </>
-            ))}
-          </div>
-        )}
+                    <TimerBox
+                      value={
+                        seg.value
+                      }
+                      label={
+                        seg.label
+                      }
+                    />
 
-        {/* CTA */}
-        {!ended && (
-          <div style={{ marginTop: "40px" }}>
-            <a
-              href="#"
-              style={{
-                display: "inline-block",
-                background: "#ffffff",
-                color: "#C0392B",
-                fontWeight: 600,
-                fontSize: "14px",
-                padding: "14px 32px",
-                borderRadius: "6px",
-                textDecoration: "none",
-                letterSpacing: "0.03em",
-                fontFamily: "'Georgia', serif",
-                boxShadow: "0 2px 12px rgba(0,0,0,0.15)",
-                transition: "transform 0.15s, box-shadow 0.15s",
-              }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLAnchorElement).style.transform =
-                  "translateY(-2px)";
-                (e.currentTarget as HTMLAnchorElement).style.boxShadow =
-                  "0 6px 20px rgba(0,0,0,0.22)";
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLAnchorElement).style.transform =
-                  "translateY(0)";
-                (e.currentTarget as HTMLAnchorElement).style.boxShadow =
-                  "0 2px 12px rgba(0,0,0,0.15)";
-              }}
-            >
-              Shop the Sale →
-            </a>
-          </div>
+                    {i <
+                      segments.length -
+                        1 && (
+                      <span
+                        aria-hidden
+                        className="hidden self-center pb-5 text-4xl font-bold text-white/70 md:block"
+                      >
+                        :
+                      </span>
+                    )}
+                  </Fragment>
+                )
+              )}
+            </div>
+
+            {/* CTA */}
+            <div className="mt-10">
+              <Link
+                href={href}
+                className="inline-block rounded-md bg-white px-8 py-3 text-sm font-semibold text-[#C0392B] shadow-lg transition hover:-translate-y-0.5 hover:shadow-xl"
+              >
+                Shop the Sale →
+              </Link>
+            </div>
+          </>
         )}
       </div>
     </section>

@@ -61,7 +61,7 @@ function VariantModal({
   onClose,
   onConfirm,
 }: VariantModalProps) {
-  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const selectedVariant =
     product.variants.find((v) => v.id === selectedId) || null;
@@ -92,7 +92,7 @@ function VariantModal({
             const active = variant.id === selectedId;
 
             const finalPrice =
-              variant.salePrice ?? variant.price;
+              Number(variant.final_price);
 
             return (
               <button
@@ -173,36 +173,36 @@ export function ProductCard({
 
   // Primary Image
   const imageUrl =
-    product.images.find((img) => img.isPrimary)
-      ?.image ||
-    product.images[0]?.image ||
-    "/placeholder.png";
+  product.primary_image ||
+  product.images?.find(
+    (img) => img.is_primary
+  )?.image ||
+  product.images?.[0]?.image ||
+  "/placeholder.png";
+
+  // ✅ Fix: guard against undefined variants (API list items may omit this field)
+  const variants = product.variants ?? [];
 
   // Cheapest Variant
   const cheapestVariant = useMemo(() => {
-    return [...product.variants].sort((a, b) => {
-      const aPrice = a.salePrice ?? a.price;
-      const bPrice = b.salePrice ?? b.price;
+    return [...variants].sort((a, b) => {
+      const aPrice = Number(a.final_price);
+      const bPrice = Number(b.final_price);
       return aPrice - bPrice;
     })[0];
-  }, [product.variants]);
+  }, [variants]);
 
-  const inStock = product.variants.some(
-    (v) => v.stock > 0
-  );
+  const inStock =
+    variants.some((v) => v.stock_qty > 0) || product.is_in_stock;
 
-  const hasVariants =
-    product.variants.length > 1;
+  const hasVariants = variants.length > 1;
 
-  const displayPrice =
-    cheapestVariant?.salePrice ??
-    cheapestVariant?.price ??
-    0;
+  const displayPrice =Number(cheapestVariant?.final_price ?? 0);
 
   const originalPrice =
-    cheapestVariant?.salePrice !== null
-      ? cheapestVariant.price
-      : null;
+    product.sale_price
+    ? Number(product.base_price)
+    : null;
 
   // Create Cart Item
   const createCartItem = useCallback(
@@ -212,8 +212,8 @@ export function ProductCard({
       name: product.name,
       slug: product.slug,
       image: imageUrl,
-      price: variant.price,
-      salePrice: variant.salePrice,
+      price: Number(variant.final_price),
+      salePrice: null,
       size: variant.size,
       color: variant.color,
       quantity: 1,
@@ -256,7 +256,7 @@ export function ProductCard({
           />
 
           {/* Flash Sale */}
-          {product.isFlashSale && (
+          {product.is_flash_sale && (
             <Badge
               className="absolute top-3 left-3 text-white"
               style={{
@@ -292,7 +292,7 @@ export function ProductCard({
         <div className="p-3 flex flex-col gap-2">
           {/* Category */}
           <p className="text-[11px] uppercase tracking-widest text-[#9C9488]">
-            {product.category.name}
+            {(product as any).category_name}
           </p>
 
           {/* Name */}
@@ -364,7 +364,7 @@ export function ProductCard({
       {/* Modal */}
       {showModal && (
         <VariantModal
-          product={product}
+          product={{ ...product, variants }}
           onClose={() =>
             setShowModal(false)
           }

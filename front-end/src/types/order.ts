@@ -3,8 +3,8 @@ export type PaymentMethod = 'stripe' | 'cod' | 'jazzcash';
 export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded';
 
 export interface CartItem {
-  productId: number;
-  variantId: number;
+  productId: string;
+  variantId: string;
   name: string;
   slug: string;
   image: string;

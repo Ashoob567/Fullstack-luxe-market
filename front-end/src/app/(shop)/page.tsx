@@ -5,7 +5,7 @@ import FlashSaleTimer from '@/components/home/FlashSaleTimer';
 import TrustBadges  from '@/components/home/TrustBadges';
 import Footer from '@/components/layout/Footer';
 import Newsletter from '@/components/home/Newsletter'
-import ProductCard from '@/components/products/ProductCard';
+
 
 
 
@@ -17,8 +17,12 @@ export default function HomePage() {
       <HeroBanner /> 
       <CategoryGrid /> 
       <FeaturedProducts />
+      
       <TrustBadges /> 
-      <FlashSaleTimer /> 
+      <FlashSaleTimer 
+      isActive={true} 
+      endTime="2026-05-10T23:59:59Z"
+      />
       <Newsletter/> 
       <Footer/>
 

@@ -1,4 +1,7 @@
 import logging
+import uuid
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.filters import OrderingFilter, SearchFilter
 
 from django.db.models import Avg, Count, Sum
 from django.db.models.functions import Coalesce
@@ -18,6 +21,18 @@ from .filters import ProductFilter
 from utils.storage import SupabaseStorage
 
 logger = logging.getLogger(__name__)
+
+
+def base_product_queryset():
+    return (
+        Product.objects.filter(is_active=True)
+        .select_related("category")
+        .prefetch_related("images", "variants", "tags")
+        .annotate(
+            average_rating=Avg("reviews__rating"),
+            review_count=Coalesce(Count("reviews"), 0),
+        )
+    )
 
 
 class CategoryListView(ListAPIView):
@@ -41,17 +56,12 @@ class ProductListView(ListAPIView):
     serializer_class = ProductListSerializer
     pagination_class = ProductPagination
     filterset_class = ProductFilter
+    filter_backends = [DjangoFilterBackend, OrderingFilter, SearchFilter]
+    search_fields = ["name", "slug", "description"]
+    ordering_fields = ["base_price", "created_at", "name"]
 
     def get_queryset(self):
-        return (
-            Product.objects.filter(is_active=True)
-            .select_related("category")
-            .prefetch_related("images", "variants", "tags")
-            .annotate(
-                average_rating=Avg("reviews__rating"),
-                review_count=Coalesce(Count("reviews"), 0),
-            )
-        )
+        return base_product_queryset()
 
 
 class ProductDetailView(RetrieveAPIView):
@@ -59,61 +69,30 @@ class ProductDetailView(RetrieveAPIView):
     lookup_field = "slug"
 
     def get_queryset(self):
-        return (
-            Product.objects.filter(is_active=True)
-            .prefetch_related("images", "variants", "tags")
-            .annotate(
-                average_rating=Avg("reviews__rating"),
-                review_count=Coalesce(Count("reviews"), 0),
-            )
-        )
+        return base_product_queryset()
 
 
 class FeaturedProductsView(ListAPIView):
     serializer_class = ProductListSerializer
 
     def get_queryset(self):
-        return (
-            Product.objects.filter(is_active=True, is_featured=True)
-            .select_related("category")
-            .prefetch_related("images", "variants", "tags")
-            .annotate(
-                average_rating=Avg("reviews__rating"),
-                review_count=Coalesce(Count("reviews"), 0),
-            )[:8]
-        )
+        return base_product_queryset().filter(is_featured=True)[:8]
+
+    
 
 
 class NewArrivalsView(ListAPIView):
     serializer_class = ProductListSerializer
 
     def get_queryset(self):
-        return (
-            Product.objects.filter(is_active=True)
-            .select_related("category")
-            .prefetch_related("images", "variants", "tags")
-            .annotate(
-                average_rating=Avg("reviews__rating"),
-                review_count=Coalesce(Count("reviews"), 0),
-            )
-            .order_by("-created_at")[:8]
-        )
+        return base_product_queryset().order_by("-created_at")[:8]
 
 
 class BestsellersView(ListAPIView):
     serializer_class = ProductListSerializer
 
     def get_queryset(self):
-        return (
-            Product.objects.filter(is_active=True)
-            .select_related("category")
-            .prefetch_related("images", "variants", "tags")
-            .annotate(
-                average_rating=Avg("reviews__rating"),
-                review_count=Coalesce(Count("reviews"), 0),
-            )
-            .order_by("-review_count")[:8]
-        )
+        return base_product_queryset().order_by("-review_count")[:8]
 
 
 class CategoryProductsView(ListAPIView):

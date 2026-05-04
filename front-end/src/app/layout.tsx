@@ -13,7 +13,7 @@ import { Playfair_Display } from "next/font/google";
 import CategoryGrid from "@/components/home/CategoryGrid";
 import FeaturedProducts from "@/components/home/FeaturedProducts";
 import FlashSaleTimer from "@/components/home/FlashSaleTimer";
-import {TrustBadges}  from "@/components/home/TrustBadges";
+import TrustBadges  from "@/components/home/TrustBadges";
 import { Main } from "next/document";
 import NewsletterSection from "@/components/home/Newsletter";
 import HomePage from "./(shop)/page";

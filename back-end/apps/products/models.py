@@ -1,5 +1,6 @@
 import uuid
 import logging
+from django.utils import timezone
 
 from django.db import models
 from django.conf import settings
@@ -9,6 +10,9 @@ def get_supabase_storage():
     """Return a SupabaseStorage instance for use in model fields."""
     from utils.storage import SupabaseStorage
     return SupabaseStorage()
+
+
+
 
 
 class ProductTag(models.Model):
@@ -55,22 +59,49 @@ class Product(models.Model):
     name = models.CharField(max_length=200)
     slug = models.SlugField(max_length=210, unique=True, blank=True)
     description = models.TextField()
+
     category = models.ForeignKey(
         Category,
         on_delete=models.SET_NULL,
         null=True,
         related_name="products",
     )
+
     base_price = models.DecimalField(max_digits=10, decimal_places=2)
+
     sale_price = models.DecimalField(
         max_digits=10,
         decimal_places=2,
         null=True,
         blank=True,
     )
+
+    # =========================
+    # FLASH SALE FIELDS (NEW)
+    # =========================
+    is_flash_sale = models.BooleanField(default=False)
+
+    flash_sale_price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+    )
+
+    flash_sale_ends_at = models.DateTimeField(
+        null=True,
+        blank=True
+    )
+
     is_featured = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
-    tags = models.ManyToManyField(ProductTag, blank=True, related_name="products")
+
+    tags = models.ManyToManyField(
+        ProductTag,
+        blank=True,
+        related_name="products"
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -82,6 +113,9 @@ class Product(models.Model):
     def __str__(self):
         return self.name
 
+    # =========================
+    # DISCOUNT LOGIC
+    # =========================
     @property
     def discount_percentage(self):
         if self.sale_price and self.sale_price < self.base_price:
@@ -91,7 +125,34 @@ class Product(models.Model):
 
     @property
     def is_on_sale(self):
-        return self.sale_price is not None and self.sale_price < self.base_price
+        return (
+            self.sale_price is not None
+            and self.sale_price < self.base_price
+        )
+
+    # =========================
+    # FLASH SALE LOGIC (NEW)
+    # =========================
+    @property
+    def is_flash_active(self):
+
+        if not self.is_flash_sale:
+            return False
+
+        if self.flash_sale_ends_at and self.flash_sale_ends_at < timezone.now():
+            return False
+
+        return True
+
+    @property
+    def effective_price(self):
+        """
+        Final price used everywhere (frontend + backend)
+        """
+        if self.is_flash_active and self.flash_sale_price:
+            return self.flash_sale_price
+
+        return self.sale_price or self.base_price
 
 
 class ProductImage(models.Model):
@@ -113,7 +174,7 @@ class ProductImage(models.Model):
     order = models.PositiveIntegerField(default=0)
 
     class Meta:
-        ordering = ["order", "is_primary"]
+        ordering = ["-is_primary", "order"]
         verbose_name = "Product Image"
         verbose_name_plural = "Product Images"
 
@@ -158,7 +219,8 @@ class ProductVariant(models.Model):
 
     @property
     def final_price(self):
-        return self.product.base_price + self.price_modifier
+        base = self.product.effective_price
+        return base + self.price_modifier
 
     @property
     def is_in_stock(self):
@@ -184,7 +246,7 @@ class Review(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        unique_together = ("product", "user")
+        constraints = [ models.UniqueConstraint(fields=["product", "user"],name="unique_product_review_per_user")]
         ordering = ["-created_at"]
         verbose_name = "Review"
         verbose_name_plural = "Reviews"

@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import { Truck, Shield, Package, RefreshCw } from "lucide-react";
 
 const badges = [
@@ -30,10 +31,9 @@ export default function TrustBadges() {
         {badges.map((badge, index) => {
           const Icon = badge.icon;
           return (
-            <>
-              <div
-                key={badge.title}
-                className="flex flex-col items-center text-center gap-2"
+            // ✅ Fix: <Fragment key={...}> so key is on the outermost element
+            <Fragment key={badge.title}>
+              <div className="flex flex-col items-center text-center gap-2"
               >
                 <Icon
                   size={32}
@@ -52,7 +52,7 @@ export default function TrustBadges() {
               {index < badges.length - 1 && (
                 <div className="hidden md:block w-px bg-[#D8CFC0] self-stretch" />
               )}
-            </>
+            </Fragment>
           );
         })}
       </div>
