@@ -117,56 +117,69 @@ export function ProductCardV2({ product, priority = false }: ProductCardV2Props)
       image: displayImage,
       slug: product.slug,
       category: product.category_name || '',
+      
     });
   };
 
   const handleAddToCart = () => {
-    if (!selectedSize || !selectedColor) {
-      toast.info('Please select a size');
+    // If product has variants, require selection
+    if (hasVariants) {
+      if (!selectedSize || !selectedColor) {
+        toast.info('Please select a size');
+        return;
+      }
+
+      const cartItem: Omit<CartItem, 'cart_item_id'> = {
+        product_id: product.id,
+        variant_id: selectedSize.id,
+        name: product.name,
+        image: displayImage,
+        price: selectedSize.final_price,
+        size: selectedSize.size_name,
+        color: selectedColor.color_name,
+        quantity: 1,
+      };
+
+      addItem(cartItem);
+      toast.success('Added to cart');
+      openDrawer();
       return;
     }
 
-    const cartItem: Omit<CartItem, 'cart_item_id'> = {
-      product_id: product.id,
-      variant_id: selectedSize.id,
-      name: product.name,
-      image: displayImage,
-      price: selectedSize.final_price,
-      size: selectedSize.size_name,
-      color: selectedColor.color_name,
-      quantity: 1,
-    };
-
-    addItem(cartItem);
-    toast.success('Added to cart');
-    openDrawer();
+    // Simple product without variants
+    toast.info('This product is currently unavailable');
   };
 
   const handleBuyNow = () => {
-    if (!selectedSize || !selectedColor) {
-      toast.info('Please select a size');
+    // If product has variants, require selection
+    if (hasVariants) {
+      if (!selectedSize || !selectedColor) {
+        toast.info('Please select a size');
+        return;
+      }
+
+      const cartItem: Omit<CartItem, 'cart_item_id'> = {
+        product_id: product.id,
+        variant_id: selectedSize.id,
+        name: product.name,
+        image: displayImage,
+        price: selectedSize.final_price,
+        size: selectedSize.size_name,
+        color: selectedColor.color_name,
+        quantity: 1,
+      };
+
+      addItem(cartItem);
+      router.push('/checkout');
       return;
     }
 
-    const cartItem: Omit<CartItem, 'cart_item_id'> = {
-      product_id: product.id,
-      variant_id: selectedSize.id,
-      name: product.name,
-      image: displayImage,
-      price: selectedSize.final_price,
-      size: selectedSize.size_name,
-      color: selectedColor.color_name,
-      quantity: 1,
-    };
-
-    addItem(cartItem);
-    router.push('/checkout');
+    // Simple product without variants
+    toast.info('This product is currently unavailable');
   };
 
-  // If no color variants available, show fallback or hide card
-  if (availableColors.length === 0) {
-    return null; // Or show a "coming soon" card
-  }
+  // If no color variants available, show simplified card without size/color selection
+  const hasVariants = availableColors.length > 0;
 
   return (
     <Card
@@ -312,8 +325,8 @@ export function ProductCardV2({ product, priority = false }: ProductCardV2Props)
           )}
         </div>
 
-        {/* Size Selection */}
-        {availableSizes.length > 0 && (
+        {/* Size Selection - Only show if product has variants */}
+        {hasVariants && availableSizes.length > 0 && (
           <div className="space-y-2">
             <p className="text-xs font-semibold" style={{ color: BRAND_COLORS.textMuted }}>
               SIZE
@@ -341,8 +354,8 @@ export function ProductCardV2({ product, priority = false }: ProductCardV2Props)
           </div>
         )}
 
-        {/* Color Selection - Uses hex colors from database! */}
-        {availableColors.length > 1 && (
+        {/* Color Selection - Only show if product has variants */}
+        {hasVariants && availableColors.length > 1 && (
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <p className="text-xs font-semibold" style={{ color: BRAND_COLORS.textMuted }}>
@@ -388,16 +401,34 @@ export function ProductCardV2({ product, priority = false }: ProductCardV2Props)
           </div>
         )}
 
-        {/* Buy Now Button */}
-        <Button
-          onClick={handleBuyNow}
-          disabled={!selectedSize}
-          className="w-full rounded-xl py-6 text-sm font-semibold text-white transition-all hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-          style={{ backgroundColor: BRAND_COLORS.accentBlue }}
-        >
-          Buy Now — Rs. {displayPrice.toLocaleString()}
-          <ArrowRight size={16} className="ml-2" />
-        </Button>
+        {/* Product Status or Buy Button */}
+        {!hasVariants ? (
+          <div className="space-y-2">
+            <div
+              className="w-full rounded-xl py-4 px-4 text-center text-sm font-semibold border-2"
+              style={{
+                borderColor: BRAND_COLORS.textMuted,
+                backgroundColor: 'rgba(160, 163, 184, 0.1)',
+                color: BRAND_COLORS.textMuted,
+              }}
+            >
+              Currently Unavailable
+            </div>
+            <p className="text-xs text-center" style={{ color: BRAND_COLORS.textMuted }}>
+              This product needs size/color variants to be added
+            </p>
+          </div>
+        ) : (
+          <Button
+            onClick={handleBuyNow}
+            disabled={!selectedSize}
+            className="w-full rounded-xl py-6 text-sm font-semibold text-white transition-all hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{ backgroundColor: BRAND_COLORS.accentBlue }}
+          >
+            Buy Now — Rs. {displayPrice.toLocaleString()}
+            <ArrowRight size={16} className="ml-2" />
+          </Button>
+        )}
       </div>
     </Card>
   );
