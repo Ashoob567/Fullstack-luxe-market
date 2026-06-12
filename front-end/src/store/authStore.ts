@@ -21,20 +21,25 @@ export const useAuthStore = create<AuthState>((set) => ({
   setUser: (user) => set({ user, isAuthenticated: !!user }),
 
   setTokens: (accessToken, refreshToken) => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('accessToken', accessToken);
-      localStorage.setItem('refreshToken', refreshToken);
-    }
-    set({ accessToken, refreshToken, isAuthenticated: true });
-  },
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('accessToken', accessToken);
+    localStorage.setItem('refreshToken', refreshToken);
+    // Set session cookie for middleware (no sensitive data, just presence flag)
+    document.cookie = 'luxe_session=1; path=/; SameSite=Lax; max-age=604800';
+  }
+  set({ accessToken, refreshToken, isAuthenticated: true });
+},
 
   logout: () => {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
-    }
-    set({ user: null, accessToken: null, refreshToken: null, isAuthenticated: false });
-  },
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('user');
+    // Clear session cookie
+    document.cookie = 'luxe_session=; path=/; max-age=0';
+  }
+  set({ user: null, accessToken: null, refreshToken: null, isAuthenticated: false });
+},
 
   initializeFromStorage: () => {
     if (typeof window !== 'undefined') {

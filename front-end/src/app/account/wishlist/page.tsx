@@ -1,40 +1,73 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { get } from '@/lib/api';
-import { Product } from '@/types/product';
-import { ProductCard } from '@/components/products/ProductCard';
+import { getWishlist } from '@/services/wishlistService';
+import { getProductDetail } from '@/services/productService';
+import { ProductCardV2 } from '@/components/products/ProductCardV2';
 import { EmptyState } from '@/components/common/EmptyState';
-import { useWishlist } from '@/hooks/useWishlist';
+import { useAuthStore } from '@/store/authStore';
+import { useWishlistStore } from '@/hooks/useWishlistStore';
 import { Heart } from 'lucide-react';
+import type { WishlistItem, ProductDetail } from '@/types';
 
 export default function WishlistPage() {
-  const { wishlist, isLoaded } = useWishlist();
-  const [products, setProducts] = useState<Product[]>([]);
+  const [wishlistItems, setWishlistItems] = useState<WishlistItem[]>([]);
+  const [guestProducts, setGuestProducts] = useState<ProductDetail[]>([]);
   const [loading, setLoading] = useState(true);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const guestItems = useWishlistStore((state) => state.guestItems);
 
   useEffect(() => {
-    if (!isLoaded || wishlist.length === 0) {
-      setLoading(false);
+    if (!isAuthenticated) {
+      // Guest mode - fetch full product data for each localStorage item
+      setLoading(true);
+      console.log('[WishlistPage] Guest mode - guestItems:', guestItems);
+
+      const fetchGuestProducts = async () => {
+        try {
+          console.log('[WishlistPage] Fetching products for', guestItems.length, 'items');
+          const products = await Promise.all(
+            guestItems.map((item) => getProductDetail(item.slug))
+          );
+          console.log('[WishlistPage] Fetched products:', products);
+          setGuestProducts(products);
+        } catch (error) {
+          console.error('Failed to fetch guest wishlist products:', error);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      if (guestItems.length > 0) {
+        fetchGuestProducts();
+      } else {
+        console.log('[WishlistPage] No guest items to fetch');
+        setLoading(false);
+      }
       return;
     }
 
-    const ids = wishlist.join(',');
-    get<{ results: Product[] }>(`/api/products/?ids=${ids}`)
-      .then((data) => setProducts(data.results))
+    // Authenticated mode - fetch from backend
+    console.log('[WishlistPage] Authenticated mode - fetching from backend');
+    getWishlist()
+      .then((items) => setWishlistItems(items))
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, [wishlist, isLoaded]);
+  }, [isAuthenticated, guestItems]);
 
-  if (!isLoaded || loading) {
+  if (loading) {
     return (
-      <div className="container py-8">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="space-y-4">
-              <div className="aspect-square w-full rounded-lg bg-muted animate-pulse" />
-              <div className="h-4 w-3/4 rounded bg-muted animate-pulse" />
-              <div className="h-4 w-1/2 rounded bg-muted animate-pulse" />
+      <div className="container py-8 min-h-screen">
+        <div className="h-10 w-64 rounded-lg bg-muted animate-pulse mb-8" />
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {[...Array(8)].map((_, i) => (
+            <div key={i} className="space-y-3 rounded-xl border border-border bg-card overflow-hidden">
+              <div className="aspect-square w-full bg-muted animate-pulse" />
+              <div className="p-3 space-y-2">
+                <div className="h-3 w-16 rounded bg-muted animate-pulse" />
+                <div className="h-4 w-full rounded bg-muted animate-pulse" />
+                <div className="h-5 w-24 rounded bg-muted animate-pulse" />
+              </div>
             </div>
           ))}
         </div>
@@ -42,12 +75,17 @@ export default function WishlistPage() {
     );
   }
 
-  if (products.length === 0) {
+  // Check if wishlist is empty
+  const itemCount = isAuthenticated ? wishlistItems.length : guestProducts.length;
+
+  if (itemCount === 0) {
     return (
       <div className="container py-16">
         <EmptyState
-          title="Your wishlist is empty"
-          description="Save products you love to your wishlist"
+          title={isAuthenticated ? "Your wishlist is empty" : "Your wishlist is empty"}
+          description={isAuthenticated
+            ? "Save products you love to your wishlist"
+            : "Save products you love (login to sync across devices)"}
           actionText="Browse Products"
           onAction={() => (window.location.href = '/products')}
           icon={<Heart className="h-12 w-12 text-muted-foreground" />}
@@ -57,12 +95,33 @@ export default function WishlistPage() {
   }
 
   return (
-    <div className="container py-8">
-      <h1 className="text-3xl font-bold mb-8">My Wishlist</h1>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {products.map((product) => (
-          <ProductCard key={product.id} product={product} />
-        ))}
+    <div className="container py-8 min-h-screen">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+        <h1 className="text-3xl font-bold text-foreground">
+          My Wishlist ({itemCount})
+        </h1>
+        {!isAuthenticated && (
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-muted border border-border">
+            <Heart size={16} className="text-muted-foreground" />
+            <p className="text-sm text-muted-foreground">
+              Login to sync your wishlist across devices
+            </p>
+          </div>
+        )}
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        {isAuthenticated ? (
+          // Authenticated: Show backend wishlist with full product details
+          wishlistItems.map((item) => (
+            <ProductCardV2 key={item.id} product={item.product} />
+          ))
+        ) : (
+          // Guest: Show full product cards with fetched data
+          guestProducts.map((product) => (
+            <ProductCardV2 key={product.id} product={product} />
+          ))
+        )}
       </div>
     </div>
   );

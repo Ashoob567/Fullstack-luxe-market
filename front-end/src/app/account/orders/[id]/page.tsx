@@ -45,7 +45,7 @@ export default function OrderDetailPage() {
         items={[
           { label: 'Account', href: '/account' },
           { label: 'Orders', href: '/account/orders' },
-          { label: `Order #${order.id}` },
+          { label: `Order #${order.order_number}` },
         ]}
       />
 
@@ -55,7 +55,7 @@ export default function OrderDetailPage() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle>Order Items</CardTitle>
-                <Badge>{order.status}</Badge>
+                <Badge>{order.status_display ?? order.status}</Badge>
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -64,20 +64,29 @@ export default function OrderDetailPage() {
                   <div className="relative h-20 w-20 rounded-md bg-muted overflow-hidden">
                     <Image
                       src={`/placeholder-product.jpg`}
-                      alt={item.productName}
+                      alt={item.name}
                       fill
                       className="object-cover"
                     />
                   </div>
                   <div className="flex-1">
-                    <h4 className="font-medium">{item.productName}</h4>
+                    {/* ✅ item.name (was item.productName) */}
+                    <h4 className="font-medium">{item.name}</h4>
+                    {/* ✅ item.unit_price (was item.price) — string, parse to number */}
                     <p className="text-sm text-muted-foreground">
-                      Qty: {item.quantity} x {formatPrice(item.price)}
+                      Qty: {item.quantity} × {formatPrice(parseFloat(item.unit_price))}
                     </p>
-                    {item.size && <p className="text-xs text-muted-foreground">Size: {item.size}</p>}
-                    {item.color && <p className="text-xs text-muted-foreground">Color: {item.color}</p>}
+                    {/* ✅ item.variant.size (was item.size) */}
+                    {item.variant?.size && (
+                      <p className="text-xs text-muted-foreground">Size: {item.variant.size}</p>
+                    )}
+                    {/* ✅ item.variant.color (was item.color) */}
+                    {item.variant?.color && (
+                      <p className="text-xs text-muted-foreground">Color: {item.variant.color}</p>
+                    )}
                   </div>
-                  <p className="font-medium">{formatPrice(item.price * item.quantity)}</p>
+                  {/* ✅ item.subtotal (string) — parse to number */}
+                  <p className="font-medium">{formatPrice(parseFloat(item.subtotal))}</p>
                 </div>
               ))}
             </CardContent>
@@ -92,20 +101,26 @@ export default function OrderDetailPage() {
             <CardContent className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Subtotal</span>
-                <span>{formatPrice(order.subtotal)}</span>
+                {/* ✅ order.subtotal is a string — parse to number */}
+                <span>{formatPrice(parseFloat(order.subtotal))}</span>
               </div>
+              {parseFloat(order.discount_amount) > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Discount</span>
+                  <span>−{formatPrice(parseFloat(order.discount_amount))}</span>
+                </div>
+              )}
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Shipping</span>
-                <span>{formatPrice(order.shippingCost)}</span>
+                {/* ✅ order.shipping_amount (was order.shippingCost) */}
+                <span>{formatPrice(parseFloat(order.shipping_amount))}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Tax</span>
-                <span>{formatPrice(order.tax)}</span>
-              </div>
+              {/* ✅ order.tax removed — field doesn't exist in model */}
               <Separator />
               <div className="flex justify-between font-semibold">
                 <span>Total</span>
-                <span>{formatPrice(order.total)}</span>
+                {/* ✅ order.total_amount (was order.total) */}
+                <span>{formatPrice(parseFloat(order.total_amount))}</span>
               </div>
             </CardContent>
           </Card>
@@ -115,12 +130,15 @@ export default function OrderDetailPage() {
               <CardTitle>Shipping Address</CardTitle>
             </CardHeader>
             <CardContent className="text-sm">
-              <p>{order.shippingAddress.firstName} {order.shippingAddress.lastName}</p>
-              <p>{order.shippingAddress.addressLine1}</p>
-              {order.shippingAddress.addressLine2 && <p>{order.shippingAddress.addressLine2}</p>}
-              <p>{order.shippingAddress.city}, {order.shippingAddress.state} {order.shippingAddress.postalCode}</p>
-              <p>{order.shippingAddress.country}</p>
-              <p>{order.shippingAddress.phone}</p>
+              {/* ✅ order.shipping_address (was order.shippingAddress) */}
+              <p>{order.shipping_address.firstName} {order.shipping_address.lastName}</p>
+              {/* ✅ order.shipping_address.streetAddress (was addressLine1) */}
+              <p>{order.shipping_address.streetAddress}</p>
+              {/* ✅ addressLine2 removed — doesn't exist in model */}
+              {/* ✅ order.shipping_address.province (was state) */}
+              <p>{order.shipping_address.city}, {order.shipping_address.province} {order.shipping_address.postalCode}</p>
+              {/* ✅ country removed — doesn't exist in model */}
+              <p>{order.shipping_address.phone}</p>
             </CardContent>
           </Card>
 
@@ -131,16 +149,19 @@ export default function OrderDetailPage() {
             <CardContent className="text-sm space-y-2">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Order Date</span>
-                <span>{formatDate(order.createdAt)}</span>
+                {/* ✅ order.created_at (was order.createdAt) */}
+                <span>{formatDate(order.created_at)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Payment Method</span>
-                <span className="uppercase">{order.paymentMethod}</span>
+                {/* ✅ order.payment_method (was order.paymentMethod) */}
+                <span className="uppercase">{order.payment_method_display ?? order.payment_method}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Payment Status</span>
-                <Badge variant={order.paymentStatus === 'paid' ? 'default' : 'secondary'}>
-                  {order.paymentStatus}
+                {/* ✅ order.payment_status (was order.paymentStatus) */}
+                <Badge variant={order.payment_status === 'paid' ? 'default' : 'secondary'}>
+                  {order.payment_status_display ?? order.payment_status}
                 </Badge>
               </div>
             </CardContent>

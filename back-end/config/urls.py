@@ -8,12 +8,16 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('_nested_admin/', include('nested_admin.urls')),  # For nested inline JS
     path('api/auth/', include('apps.users.urls')),
-    path('api/products/', include('apps.products.urls')),
-    path('api/orders/', include('apps.orders.urls')),
-    path('api/payments/', include('apps.payments.urls')),
-    path('api/cart/', include('apps.cart.urls')),
-    path('api/categories/',include('apps.products.urls'))
+    path('api/products/', include('apps.products.urls')),#pass
+    path('api/orders/', include('apps.orders.urls')),#pending 401
+    path('api/payments/', include('apps.payments.urls')),#pending page not found
+    path('api/cart/', include('apps.cart.urls')),#pending page not found
+    path('api/categories/',include('apps.products.category_urls')),#pass
+    path("api/wishlist/", include("apps.wishlists.urls")),#pending
+    path("api/coupons/", include("apps.coupons.urls")),#pending
+    
 ]
 
 # Serve media files in development

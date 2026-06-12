@@ -10,8 +10,17 @@ DEBUG = True
 DATABASES = {
     'default': dj_database_url.config(
         default=os.getenv('DATABASE_URL'),
-        conn_max_age=600,
+        conn_max_age=0,  # Close connections immediately after each request (prevents pool exhaustion)
+        conn_health_checks=True,  # Enable connection health checks
     )
+}
+
+# Alternative: Use persistent connections with proper pooling
+# For production, consider using PgBouncer or upgrading Supabase plan
+# DATABASES['default']['CONN_MAX_AGE'] = 0  # Redundant with conn_max_age above
+DATABASES['default']['OPTIONS'] = {
+    'connect_timeout': 10,
+    'options': '-c statement_timeout=30000'  # 30 second query timeout
 }
 
 # Test configuration - use in-memory SQLite for fast tests

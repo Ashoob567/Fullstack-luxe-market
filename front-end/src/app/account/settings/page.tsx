@@ -14,28 +14,28 @@ import { toast } from 'sonner';
 import { put } from '@/lib/api';
 
 const profileSchema = z.object({
-  firstName: z.string().min(1, 'First name is required'),
-  lastName: z.string().min(1, 'Last name is required'),
+  first_name: z.string().min(1, 'First name is required'),
+  last_name: z.string().min(1, 'Last name is required'),
   email: z.string().email('Invalid email address'),
   phone: z.string().optional(),
-  currentPassword: z.string().optional(),
-  newPassword: z.string().min(8, 'Password must be at least 8 characters').optional(),
-  confirmPassword: z.string().optional(),
-}).refine((data) => {
-  if (data.newPassword || data.confirmPassword) {
-    return data.newPassword === data.confirmPassword;
-  }
-  return true;
-}, {
+});
+
+const passwordSchema = z.object({
+  old_password: z.string().min(1, 'Current password is required'),
+  new_password: z.string().min(8, 'Password must be at least 8 characters'),
+  confirm_password: z.string(),
+}).refine((data) => data.new_password === data.confirm_password, {
   message: "Passwords don't match",
-  path: ['confirmPassword'],
+  path: ['confirm_password'],
 });
 
 type ProfileFormData = z.infer<typeof profileSchema>;
+type PasswordFormData = z.infer<typeof passwordSchema>;
 
 export default function SettingsPage() {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [isPwdLoading, setIsPwdLoading] = useState(false);
 
   const {
     register,
@@ -44,23 +44,55 @@ export default function SettingsPage() {
   } = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
-      firstName: user?.firstName || '',
-      lastName: user?.lastName || '',
+      first_name: user?.first_name || '',
+      last_name: user?.last_name || '',
       email: user?.email || '',
       phone: user?.phone || '',
     },
   });
 
+  const {
+    register: registerPwd,
+    handleSubmit: handlePwdSubmit,
+    formState: { errors: pwdErrors },
+    reset: resetPwd,
+  } = useForm<PasswordFormData>({
+    resolver: zodResolver(passwordSchema),
+  });
+
   const onSubmit = async (data: ProfileFormData) => {
     setIsLoading(true);
     try {
-      await put(`/api/users/${user?.id}/`, data);
+      // Correct endpoint: PUT /api/auth/me/update/
+      await put('/api/auth/me/update/', {
+        first_name: data.first_name,
+        last_name:  data.last_name,
+        phone:      data.phone,
+      });
       toast.success('Profile updated successfully');
     } catch (error) {
       console.error('Failed to update profile:', error);
       toast.error('Failed to update profile');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const onPasswordSubmit = async (data: PasswordFormData) => {
+    setIsPwdLoading(true);
+    try {
+      await put('/api/auth/change-password/', {
+        old_password: data.old_password,
+        new_password: data.new_password,
+        confirm_password: data.confirm_password,
+      });
+      toast.success('Password updated successfully');
+      resetPwd();
+    } catch (error) {
+      console.error('Failed to update password:', error);
+      toast.error('Failed to update password. Check your current password.');
+    } finally {
+      setIsPwdLoading(false);
     }
   };
 
@@ -78,17 +110,17 @@ export default function SettingsPage() {
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="firstName">First Name</Label>
-                  <Input id="firstName" {...register('firstName')} />
-                  {errors.firstName && (
-                    <p className="text-sm text-destructive">{errors.firstName.message}</p>
+                  <Label htmlFor="first_name">First Name</Label>
+                  <Input id="first_name" {...register('first_name')} />
+                  {errors.first_name && (
+                    <p className="text-sm text-destructive">{errors.first_name.message}</p>
                   )}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="lastName">Last Name</Label>
-                  <Input id="lastName" {...register('lastName')} />
-                  {errors.lastName && (
-                    <p className="text-sm text-destructive">{errors.lastName.message}</p>
+                  <Label htmlFor="last_name">Last Name</Label>
+                  <Input id="last_name" {...register('last_name')} />
+                  {errors.last_name && (
+                    <p className="text-sm text-destructive">{errors.last_name.message}</p>
                   )}
                 </div>
               </div>
@@ -118,28 +150,33 @@ export default function SettingsPage() {
             <CardTitle>Change Password</CardTitle>
             <CardDescription>Update your password securely</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="currentPassword">Current Password</Label>
-              <Input id="currentPassword" type="password" {...register('currentPassword')} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="newPassword">New Password</Label>
-              <Input id="newPassword" type="password" {...register('newPassword')} />
-              {errors.newPassword && (
-                <p className="text-sm text-destructive">{errors.newPassword.message}</p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm New Password</Label>
-              <Input id="confirmPassword" type="password" {...register('confirmPassword')} />
-              {errors.confirmPassword && (
-                <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>
-              )}
-            </div>
-            <Button type="submit" onClick={handleSubmit(onSubmit)}>
-              Update Password
-            </Button>
+          <CardContent>
+            <form onSubmit={handlePwdSubmit(onPasswordSubmit)} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="old_password">Current Password</Label>
+                <Input id="old_password" type="password" {...registerPwd('old_password')} />
+                {pwdErrors.old_password && (
+                  <p className="text-sm text-destructive">{pwdErrors.old_password.message}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="new_password">New Password</Label>
+                <Input id="new_password" type="password" {...registerPwd('new_password')} />
+                {pwdErrors.new_password && (
+                  <p className="text-sm text-destructive">{pwdErrors.new_password.message}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="confirm_password">Confirm New Password</Label>
+                <Input id="confirm_password" type="password" {...registerPwd('confirm_password')} />
+                {pwdErrors.confirm_password && (
+                  <p className="text-sm text-destructive">{pwdErrors.confirm_password.message}</p>
+                )}
+              </div>
+              <Button type="submit" disabled={isPwdLoading}>
+                {isPwdLoading ? 'Updating...' : 'Update Password'}
+              </Button>
+            </form>
           </CardContent>
         </Card>
       </div>

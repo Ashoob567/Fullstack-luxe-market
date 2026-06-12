@@ -1,160 +1,216 @@
-// src/types/product.ts
+// ============================================================
+// types/product.ts
+// Based on: products/serializers.py
+// ============================================================
 
-export type UUID = string;
+import { Review } from "./review";
 
-//
-// CATEGORY
-//
+// ----------------------------------------------------------
+// Category
+// ----------------------------------------------------------
+
 export interface Category {
-  id: UUID;
+  id: string;                        // UUID
   name: string;
   slug: string;
   description: string | null;
   image: string | null;
-  parent_id: UUID | null;
-  children?: Category[];
+  parent_id: string | null;          // UUID — null if root category
+  children: Category[];              // recursive — nested subcategories
+  is_active: boolean;
+  created_at: string;                // ISO datetime string
 }
 
-//
-// PRODUCT TAG
-//
+// ----------------------------------------------------------
+// Product Tag
+// ----------------------------------------------------------
+
 export interface ProductTag {
-  id: UUID;
+  id: string;                        // UUID
   name: string;
   slug: string;
 }
 
-//
-// PRODUCT IMAGE
-//
+// ----------------------------------------------------------
+// Product Image
+// ----------------------------------------------------------
+
 export interface ProductImage {
-  id: UUID;
-  image: string | null;
-  url: string | null;
-  alt_text: string;
+  id: string;                        // UUID
+  image: string | null;              // relative path
+  url: string | null;                // absolute URL (SerializerMethodField)
+  alt_text: string | null;
+  color: string | null;              // Color variant this image represents
   is_primary: boolean;
   order: number;
 }
 
-//
-// PRODUCT VARIANT
-//
+// ----------------------------------------------------------
+// Product Variant
+// ----------------------------------------------------------
+
 export interface ProductVariant {
-  id: UUID;
+  id: string;                        // UUID
   sku: string;
   size: string | null;
   color: string | null;
   stock_qty: number;
-  final_price: string;
-  is_in_stock: boolean;
+  price_modifier: string;            // DRF Decimal → string
+  final_price: string;               // DRF Decimal → string (computed)
+  is_in_stock: boolean;              // computed property
 }
 
-//
-// PRODUCT LIST ITEM
-// homepage / featured / shop cards
-//
-export interface ProductCard {
-  id: UUID;
+// ----------------------------------------------------------
+// Color Variant Group (for product card color selector)
+// OLD STRUCTURE - will be deprecated
+// ----------------------------------------------------------
+
+export interface ColorVariantSize {
+  size: string;
+  variant_id: string;
+  sku: string;
+  stock_qty: number;
+  price_modifier: string;
+  final_price: string;
+}
+
+export interface ColorVariant {
+  color: string;
+  image_url: string | null;
+  sizes: ColorVariantSize[];
+  in_stock: boolean;
+}
+
+// ----------------------------------------------------------
+// UNIFIED VARIANT STRUCTURE (NEW - Recommended!) ✨
+// Product → VariantV2 (color + size + image in one!)
+// ----------------------------------------------------------
+
+export interface ProductVariantV2 {
+  id: string;
+  color_name: string;
+  hex_primary: string;
+  hex_light: string | null;
+  hex_dark: string | null;
+  image_url: string | null;
+  size_name: string;
+  sku: string;
+  stock_quantity: number;
+  price_adjustment: string;
+  is_in_stock: boolean;
+  final_price: string;
+  display_order: number;
+}
+
+export interface ProductColor {
+  color_name: string;
+  hex_primary: string;
+  hex_light: string | null;
+  hex_dark: string | null;
+  image_url: string | null;
+  in_stock: boolean;
+}
+
+// ----------------------------------------------------------
+// OLD NESTED STRUCTURE (DEPRECATED)
+// Product → Color → Size hierarchy
+// ----------------------------------------------------------
+
+export interface ProductSizeVariant {
+  id: string;
+  size_name: string;
+  sku: string;
+  stock_quantity: number;
+  price_adjustment: string;
+  is_in_stock: boolean;
+  final_price: string;
+  display_order: number;
+}
+
+export interface ProductColorVariant {
+  id: string;
+  color_name: string;
+  hex_primary: string;
+  hex_light: string | null;
+  hex_dark: string | null;
+  image_url: string | null;
+  size_variants: ProductSizeVariant[];
+  is_in_stock: boolean;
+  total_stock: number;
+  display_order: number;
+}
+
+// ----------------------------------------------------------
+// Product List (Card view — lightweight)
+// ----------------------------------------------------------
+
+export interface ProductList {
+  id: string;                        // UUID
   name: string;
   slug: string;
-
-  base_price: string;
-  sale_price: string | null;
-
-  discount_percentage: string;
+  description: string | null;        // Product description/subtitle
+  base_price: string;                // DRF Decimal → string
+  sale_price: string | null;         // DRF Decimal → string
+  effective_price: string;           // computed: flash > sale > base
+  discount_percentage: string | null;// DRF Decimal → string
   is_on_sale: boolean;
-  is_featured: boolean;
-
-  primary_image: string | null;
-
-  category_id: UUID | null;
-  category_name: string | null;
-
-  average_rating: number | null;
-  is_in_stock: boolean;
-
   // Flash Sale
   is_flash_sale: boolean;
+  flash_sale_price: string | null;   // DRF Decimal → string
+  flash_sale_ends_at: string | null; // ISO datetime string
   is_flash_active: boolean;
-  flash_sale_price: string | null;
-  flash_sale_ends_at: string | null;
-}
-
-//
-// FULL PRODUCT DETAIL
-//
-export interface Product {
-  id: UUID;
-  name: string;
-  slug: string;
-  description: string;
-
-  category: Category | null;
-
-  base_price: string;
-  sale_price: string | null;
-
   is_featured: boolean;
   is_active: boolean;
+  primary_image: string | null;      // absolute URL
 
+  // NEW UNIFIED STRUCTURE (Recommended!)
+  variants?: ProductVariantV2[];     // All variants (flat structure)
+  colors?: ProductColor[];           // Unique colors (for color selector)
+
+  // OLD STRUCTURES (Deprecated)
+  images?: ProductImage[];           // All product images
+  color_variants?: ColorVariant[];   // OLD flat structure
+  color_variants_new?: ProductColorVariant[];  // Normalized structure (Current!)
+
+  tags?: ProductTag[];               // Product tags for badges (NEW ARRIVAL, SALE, etc.)
+
+  category_id: string | null;        // UUID
+  category_name: string | null;
+  average_rating: number | null;     // computed
+  review_count: number;              // computed
+  is_in_stock: boolean;              // computed
+}
+
+// ----------------------------------------------------------
+// Product Detail (Full page view)
+// ----------------------------------------------------------
+
+export interface ProductDetail {
+  id: string;                        // UUID
+  name: string;
+  slug: string;
+  description: string | null;
+  category: Category | null;         // full nested object
+  base_price: string;                // DRF Decimal → string
+  sale_price: string | null;
+  effective_price: string;           // computed
+  discount_percentage: number | null;// FloatField in detail serializer
+  is_on_sale: boolean;
+  // Flash Sale
+  is_flash_sale: boolean;
+  flash_sale_price: string | null;
+  flash_sale_ends_at: string | null;
+  is_flash_active: boolean;
+  is_featured: boolean;
+  is_active: boolean;
   tags: ProductTag[];
-
+  created_at: string;
+  updated_at: string;
   images: ProductImage[];
   variants: ProductVariant[];
   primary_image: string | null;
-
-
   average_rating: number | null;
   review_count: number;
-
-  created_at: string;
-  updated_at: string;
-
-  // Flash Sale
-  is_flash_sale: boolean;
-  is_flash_active: boolean;
-  flash_sale_price: string | null;
-  flash_sale_ends_at: string | null;
-
-  is_in_stock:boolean;
-}
-
-//
-// PAGINATION
-//
-export interface PaginatedResponse<T> {
-  count: number;
-  next: string | null;
-  previous: string | null;
-  results: T[];
-}
-
-//
-// FILTERS
-//
-export interface ProductFilters {
-  page?: number;
-  search?: string;
-  category?: UUID;
-  minPrice?: number;
-  maxPrice?: number;
-  size?: string;
-  color?: string;
-  inStock?: boolean;
-
-  ordering?:
-    | "name"
-    | "-name"
-    | "base_price"
-    | "-base_price"
-    | "created_at"
-    | "-created_at";
-}
-
-//
-// UI HELPERS
-//
-export interface SelectOption {
-  label: string;
-  value: string;
+  is_in_stock: boolean;
+  reviews: Review[];
 }

@@ -77,7 +77,7 @@ export default function AccountPage() {
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Name</span>
-                <span className="font-medium">{user.firstName} {user.lastName}</span>
+                <span className="font-medium">{user.first_name} {user.last_name}</span>
               </div>
               <Separator />
               <div className="flex justify-between">

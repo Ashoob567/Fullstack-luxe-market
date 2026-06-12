@@ -1,39 +1,33 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { get } from '@/lib/api';
-import { Product, Category } from '@/types/product';
+import { useCategoryBySlug } from '@/hooks/useCategories';
+import { useProductList } from '@/hooks/useProducts';
 import { ProductGrid } from '@/components/products/ProductGrid';
 import { Breadcrumb } from '@/components/common/Breadcrumb';
 
 export default function CategoryPage() {
   const params = useParams();
-  const [category, setCategory] = useState<Category | null>(null);
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
+  const slug = typeof params.slug === 'string' ? params.slug : (params.slug?.[0] ?? '');
 
-  useEffect(() => {
-    Promise.all([
-      get<Category>(`/api/categories/${params.slug}/`),
-      get<{ results: Product[] }>(`/api/products/?category=${params.slug}`),
-    ])
-      .then(([categoryData, productsData]) => {
-        setCategory(categoryData);
-        setProducts(productsData.results);
-      })
-      .catch(console.error)
-      .finally(() => setLoading(false));
-  }, [params.slug]);
+  const { category, isLoading: catLoading, error: catError } = useCategoryBySlug(slug);
+  const { data, isLoading: prodLoading, error: prodError } = useProductList({ category: slug });
 
-  if (loading) {
+  const isLoading = catLoading || prodLoading;
+  const error = catError || prodError;
+  const products = data?.results ?? [];
+
+  // ── Loading skeleton ──────────────────────────────────────────
+  if (isLoading) {
     return (
-      <div className="container py-8">
-        <div className="h-8 w-48 rounded bg-muted animate-pulse" />
-        <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="h-4 w-32 rounded bg-muted animate-pulse mb-6" />
+        <div className="h-8 w-48 rounded bg-muted animate-pulse mb-2" />
+        <div className="h-4 w-72 rounded bg-muted animate-pulse mb-8" />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[...Array(8)].map((_, i) => (
-            <div key={i} className="space-y-4">
-              <div className="aspect-square w-full rounded-lg bg-muted animate-pulse" />
+            <div key={i} className="space-y-3">
+              <div className="aspect-[3/4] w-full rounded-xl bg-muted animate-pulse" />
               <div className="h-4 w-3/4 rounded bg-muted animate-pulse" />
               <div className="h-4 w-1/2 rounded bg-muted animate-pulse" />
             </div>
@@ -43,33 +37,45 @@ export default function CategoryPage() {
     );
   }
 
-  if (!category) {
+  // ── Error / not found ─────────────────────────────────────────
+  if (error || !category) {
     return (
-      <div className="container py-8">
-        <p className="text-center text-muted-foreground">Category not found</p>
+      <div className="max-w-7xl mx-auto px-4 py-16 text-center text-muted-foreground">
+        <p>{error ?? 'Category not found'}</p>
       </div>
     );
   }
 
+  // ── Category page ─────────────────────────────────────────────
   return (
-    <div className="container py-8">
+    <div className="max-w-7xl mx-auto px-4 py-8">
+      {/* Breadcrumb */}
       <Breadcrumb
         items={[
+          { label: 'Home', href: '/' },
           { label: 'Products', href: '/products' },
           { label: category.name },
         ]}
       />
 
-      <div className="mt-8">
-        <h1 className="text-3xl font-bold">{category.name}</h1>
+      {/* Header */}
+      <div className="mt-6 mb-8">
+        <h1
+          className="text-3xl font-bold text-[#2C2416]"
+          style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
+        >
+          {category.name}
+        </h1>
         {category.description && (
-          <p className="mt-2 text-muted-foreground">{category.description}</p>
+          <p className="mt-2 text-muted-foreground max-w-2xl">{category.description}</p>
         )}
+        <p className="mt-1 text-sm text-[#A89880]">
+          {products.length} product{products.length !== 1 ? 's' : ''}
+        </p>
       </div>
 
-      <div className="mt-8">
-        <ProductGrid products={products} />
-      </div>
+      {/* Product grid */}
+      <ProductGrid products={products} />
     </div>
   );
 }

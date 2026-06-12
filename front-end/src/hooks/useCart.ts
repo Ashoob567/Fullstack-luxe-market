@@ -1,5 +1,5 @@
 import { useCartStore } from '@/store/cartStore';
-import { CartItem } from '@/types/order';
+import { CartItem } from '@/types';
 
 export function useCart() {
   const items = useCartStore((state) => state.items);
@@ -14,13 +14,13 @@ export function useCart() {
   const totalItems = useCartStore((state) => state.totalItems);
   const totalPrice = useCartStore((state) => state.totalPrice);
 
-  const getItemQuantity = (variantId: number) => {
-    const item = items.find((i) => i.variantId === variantId);
+  const getItemQuantity = (variantId: string) => {
+    const item = items.find((i) => i.variant_id === variantId);
     return item?.quantity ?? 0;
   };
 
-  const isInCart = (variantId: number) => {
-    return items.some((i) => i.variantId === variantId);
+  const isInCart = (variantId: string) => {
+    return items.some((i) => i.variant_id === variantId);
   };
 
   return {

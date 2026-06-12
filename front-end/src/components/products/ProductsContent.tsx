@@ -2,22 +2,21 @@
 
 import { useEffect, useState } from 'react';
 import { get } from '@/lib/api';
-import { Product, Category } from '@/types/product';
+import { ProductList, Category } from '@/types/product';
 import { ProductGrid } from '@/components/products/ProductGrid';
 import { FilterPanel } from '@/components/products/FilterPanel';
 import { SortDropdown } from '@/components/products/SortDropdown';
 
 export default function ProductsContent() {
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<ProductList[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [sortOrder, setSortOrder] = useState('default');
 
   useEffect(() => {
     Promise.all([
-      get<{ results: Product[] }>('/api/products/'),
-      get<Category[]>('/api/categories/'),
-      get<Category[]>('/api/products/categories/')
+      get<{ results: ProductList[] }>('/api/products/'),
+      get<Category[]>('/api/categories/')
     ])
       .then(([productsData, categoriesData]) => {
         setProducts(productsData.results);

@@ -65,13 +65,13 @@ export default function OrdersPage() {
           <Card key={order.id}>
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-lg">Order #{order.id}</CardTitle>
+                <CardTitle className="text-lg">Order #{order.order_number}</CardTitle>
                 <div className="flex items-center gap-4">
                   <Badge className={statusColors[order.status]}>
-                    {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                    {order.status_display ?? (order.status.charAt(0).toUpperCase() + order.status.slice(1))}
                   </Badge>
                   <span className="text-sm text-muted-foreground">
-                    {formatDate(order.createdAt)}
+                    {formatDate(order.created_at)}
                   </span>
                 </div>
               </div>
@@ -79,11 +79,10 @@ export default function OrdersPage() {
             <CardContent>
               <div className="flex items-center justify-between">
                 <div className="text-sm text-muted-foreground">
-                  {order.items.length} item{order.items.length !== 1 ? 's' : ''} |
-                  Payment: {order.paymentMethod.toUpperCase()}
+                  Payment: {order.payment_method.toUpperCase()}
                 </div>
                 <div className="flex items-center gap-4">
-                  <span className="font-semibold">{formatPrice(order.total)}</span>
+                  <span className="font-semibold">{formatPrice(parseFloat(order.total_amount))}</span>
                   <Button variant="ghost" size="sm" >
                     <Link href={`/account/orders/${order.id}`}>View Details</Link>
                   </Button>

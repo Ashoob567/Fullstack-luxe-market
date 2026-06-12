@@ -1,61 +1,112 @@
-export type OrderStatus = 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
-export type PaymentMethod = 'stripe' | 'cod' | 'jazzcash';
-export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded';
+// ============================================================
+// types/order.ts
+// Based on: orders/serializers.py
+// ============================================================
 
-export interface CartItem {
-  productId: string;
-  variantId: string;
-  name: string;
-  slug: string;
-  image: string;
-  price: number;
-  salePrice: number | null;
-  size: string | null;
-  color: string | null;
-  quantity: number;
-}
+// ----------------------------------------------------------
+// Status & Payment enums
+// ----------------------------------------------------------
 
-export interface Address {
-  id?: number;
-  firstName: string;
-  lastName: string;
-  addressLine1: string;
-  addressLine2: string | null;
-  city: string;
-  state: string;
-  postalCode: string;
-  country: string;
+export type OrderStatus =
+  | "pending"
+  | "confirmed"
+  | "processing"
+  | "shipped"
+  | "delivered"
+  | "cancelled"
+  | "refunded";
+
+export type PaymentMethod =
+  | "cod"                            // Cash on Delivery
+  | "card"
+  | "bank_transfer"
+  | "easypaisa"
+  | "jazzcash";
+
+export type PaymentStatus =
+  | "pending"
+  | "paid"
+  | "failed"
+  | "refunded";
+
+// ----------------------------------------------------------
+// Shipping Address (JSON field)
+// ----------------------------------------------------------
+
+export interface ShippingAddress {
+  full_name: string;
   phone: string;
-  isDefault: boolean;
+  address_line1: string;
+  address_line2?: string;
+  city: string;
+  province: string;
+  postal_code?: string;
+  country?: string;
 }
+
+// ----------------------------------------------------------
+// Order Item (line item — nested inside Order)
+// ----------------------------------------------------------
 
 export interface OrderItem {
-  id: number;
-  product: number;
-  productName: string;
-  productSlug: string;
-  variant: number | null;
-  size: string | null;
-  color: string | null;
+  id: string;                        // UUID
+  product_id: string;                // UUID
+  variant_id: string | null;         // UUID
+  name: string;                      // snapshot — product_name_snapshot
+  variant: Record<string, string> | null; // snapshot — variant_info_snapshot (JSONField)
+  unit_price: string;                // DRF Decimal → string
   quantity: number;
-  price: number;
+  subtotal: string;                  // DRF Decimal → string
 }
 
+// ----------------------------------------------------------
+// Order Detail (full — with items)
+// ----------------------------------------------------------
+
 export interface Order {
-  id: number;
-  user: number;
-  items: OrderItem[];
+  id: string;                        // UUID
+  order_number: string;
   status: OrderStatus;
-  paymentMethod: PaymentMethod;
-  paymentStatus: PaymentStatus;
-  subtotal: number;
-  shippingCost: number;
-  tax: number;
-  discount: number;
-  total: number;
-  shippingAddress: Address;
-  billingAddress: Address | null;
-  stripePaymentIntentId: string | null;
-  createdAt: string;
-  updatedAt: string;
+  status_display: string;            // human readable e.g. "Processing"
+  payment_method: PaymentMethod;
+  payment_method_display: string;
+  payment_status: PaymentStatus;
+  payment_status_display: string;
+  subtotal: string;                  // DRF Decimal → string
+  discount_amount: string;
+  shipping_amount: string;
+  total_amount: string;
+  coupon_code: string | null;
+  shipping_address: ShippingAddress;
+  is_discreet: boolean;
+  notes: string | null;
+  created_at: string;                // ISO datetime string
+  updated_at: string;
+  is_cancellable: boolean;           // computed property
+  display_amount: string;            // formatted e.g. "PKR 2,999"
+  items: OrderItem[];                // nested
+}
+
+// ----------------------------------------------------------
+// Order List (lightweight — no items)
+// ----------------------------------------------------------
+
+export interface OrderSummary extends Omit<Order, "items"> {}
+
+// ----------------------------------------------------------
+// Guest Order Tracking (public — limited fields)
+// ----------------------------------------------------------
+
+export interface GuestOrderTrack {
+  order_number: string;
+  status: OrderStatus;
+  status_display: string;
+  payment_method_display: string;
+  payment_status: PaymentStatus;
+  total_amount: string;
+  currency: string;                  // always "PKR"
+  created_at: string;
+  shipping_city: string;             // extracted from shipping_address JSON
+  shipping_province: string;
+  item_count: number;
 }

@@ -33,3 +33,22 @@ export function truncateText(text: string, maxLength: number): string {
   if (text.length <= maxLength) return text;
   return text.slice(0, maxLength) + '...';
 }
+
+export function parseApiError(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  if (typeof error === 'object' && error !== null) {
+    const apiError = error as any;
+    if (apiError.response?.data?.message) {
+      return apiError.response.data.message;
+    }
+    if (apiError.response?.data?.detail) {
+      return apiError.response.data.detail;
+    }
+    if (apiError.message) {
+      return apiError.message;
+    }
+  }
+  return 'An unexpected error occurred';
+}

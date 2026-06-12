@@ -1,0 +1,335 @@
+{
+  "count": 50,
+  "next": "http://localhost:8000/api/products/?page=2",
+  "previous": null,
+  "results": [
+    {
+      "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "name": "Runner Pro",
+      "slug": "runner-pro",
+      "description": "Men's Lightweight Training Shoe",
+      "base_price": "12000.00",
+      "sale_price": "8499.00",
+      "effective_price": "8499.00",
+      "discount_percentage": "29.18",
+      "is_on_sale": true,
+      "is_flash_sale": false,
+      "flash_sale_price": null,
+      "flash_sale_ends_at": null,
+      "is_flash_active": false,
+      "is_featured": true,
+      "is_active": true,
+      "primary_image": "https://iljvzwluibwuxyjavpwb.supabase.co/storage/v1/object/public/products/runner-pro-primary.jpg",
+      "images": [
+        {
+          "id": "img-001",
+          "image": "products/runner-pro-cobalt.jpg",
+          "url": "https://iljvzwluibwuxyjavpwb.supabase.co/storage/v1/object/public/products/runner-pro-cobalt.jpg",
+          "alt_text": "Runner Pro - Cobalt Indigo",
+          "color": "Cobalt Indigo",
+          "is_primary": true,
+          "order": 0
+        },
+        {
+          "id": "img-002",
+          "image": "products/runner-pro-lagoon.jpg",
+          "url": "https://iljvzwluibwuxyjavpwb.supabase.co/storage/v1/object/public/products/runner-pro-lagoon.jpg",
+          "alt_text": "Runner Pro - Lagoon",
+          "color": "Lagoon",
+          "is_primary": false,
+          "order": 1
+        },
+        {
+          "id": "img-003",
+          "image": "products/runner-pro-peach.jpg",
+          "url": "https://iljvzwluibwuxyjavpwb.supabase.co/storage/v1/object/public/products/runner-pro-peach.jpg",
+          "alt_text": "Runner Pro - Peach",
+          "color": "Peach",
+          "is_primary": false,
+          "order": 2
+        },
+        {
+          "id": "img-004",
+          "image": "products/runner-pro-ocean.jpg",
+          "url": "https://iljvzwluibwuxyjavpwb.supabase.co/storage/v1/object/public/products/runner-pro-ocean.jpg",
+          "alt_text": "Runner Pro - Ocean Blue",
+          "color": "Ocean",
+          "is_primary": false,
+          "order": 3
+        }
+      ],
+      "color_variants": [
+        {
+          "color": "Cobalt Indigo",
+          "image_url": "https://iljvzwluibwuxyjavpwb.supabase.co/storage/v1/object/public/products/runner-pro-cobalt.jpg",
+          "in_stock": true,
+          "sizes": [
+            {
+              "size": "40",
+              "variant_id": "var-001",
+              "sku": "RUNNER-PRO-CI-40",
+              "stock_qty": 10,
+              "price_modifier": "0.00",
+              "final_price": "8499.00"
+            },
+            {
+              "size": "41",
+              "variant_id": "var-002",
+              "sku": "RUNNER-PRO-CI-41",
+              "stock_qty": 5,
+              "price_modifier": "0.00",
+              "final_price": "8499.00"
+            },
+            {
+              "size": "42",
+              "variant_id": "var-003",
+              "sku": "RUNNER-PRO-CI-42",
+              "stock_qty": 8,
+              "price_modifier": "0.00",
+              "final_price": "8499.00"
+            },
+            {
+              "size": "43",
+              "variant_id": "var-004",
+              "sku": "RUNNER-PRO-CI-43",
+              "stock_qty": 12,
+              "price_modifier": "0.00",
+              "final_price": "8499.00"
+            },
+            {
+              "size": "44",
+              "variant_id": "var-005",
+              "sku": "RUNNER-PRO-CI-44",
+              "stock_qty": 3,
+              "price_modifier": "0.00",
+              "final_price": "8499.00"
+            }
+          ]
+        },
+        {
+          "color": "Lagoon",
+          "image_url": "https://iljvzwluibwuxyjavpwb.supabase.co/storage/v1/object/public/products/runner-pro-lagoon.jpg",
+          "in_stock": true,
+          "sizes": [
+            {
+              "size": "40",
+              "variant_id": "var-006",
+              "sku": "RUNNER-PRO-LAG-40",
+              "stock_qty": 7,
+              "price_modifier": "0.00",
+              "final_price": "8499.00"
+            },
+            {
+              "size": "41",
+              "variant_id": "var-007",
+              "sku": "RUNNER-PRO-LAG-41",
+              "stock_qty": 4,
+              "price_modifier": "0.00",
+              "final_price": "8499.00"
+            },
+            {
+              "size": "42",
+              "variant_id": "var-008",
+              "sku": "RUNNER-PRO-LAG-42",
+              "stock_qty": 9,
+              "price_modifier": "0.00",
+              "final_price": "8499.00"
+            },
+            {
+              "size": "43",
+              "variant_id": "var-009",
+              "sku": "RUNNER-PRO-LAG-43",
+              "stock_qty": 6,
+              "price_modifier": "0.00",
+              "final_price": "8499.00"
+            }
+          ]
+        },
+        {
+          "color": "Peach",
+          "image_url": "https://iljvzwluibwuxyjavpwb.supabase.co/storage/v1/object/public/products/runner-pro-peach.jpg",
+          "in_stock": true,
+          "sizes": [
+            {
+              "size": "40",
+              "variant_id": "var-010",
+              "sku": "RUNNER-PRO-PCH-40",
+              "stock_qty": 5,
+              "price_modifier": "0.00",
+              "final_price": "8499.00"
+            },
+            {
+              "size": "41",
+              "variant_id": "var-011",
+              "sku": "RUNNER-PRO-PCH-41",
+              "stock_qty": 8,
+              "price_modifier": "0.00",
+              "final_price": "8499.00"
+            },
+            {
+              "size": "42",
+              "variant_id": "var-012",
+              "sku": "RUNNER-PRO-PCH-42",
+              "stock_qty": 11,
+              "price_modifier": "0.00",
+              "final_price": "8499.00"
+            }
+          ]
+        },
+        {
+          "color": "Ocean",
+          "image_url": "https://iljvzwluibwuxyjavpwb.supabase.co/storage/v1/object/public/products/runner-pro-ocean.jpg",
+          "in_stock": true,
+          "sizes": [
+            {
+              "size": "41",
+              "variant_id": "var-013",
+              "sku": "RUNNER-PRO-OCN-41",
+              "stock_qty": 6,
+              "price_modifier": "0.00",
+              "final_price": "8499.00"
+            },
+            {
+              "size": "42",
+              "variant_id": "var-014",
+              "sku": "RUNNER-PRO-OCN-42",
+              "stock_qty": 10,
+              "price_modifier": "0.00",
+              "final_price": "8499.00"
+            },
+            {
+              "size": "43",
+              "variant_id": "var-015",
+              "sku": "RUNNER-PRO-OCN-43",
+              "stock_qty": 4,
+              "price_modifier": "0.00",
+              "final_price": "8499.00"
+            },
+            {
+              "size": "44",
+              "variant_id": "var-016",
+              "sku": "RUNNER-PRO-OCN-44",
+              "stock_qty": 7,
+              "price_modifier": "0.00",
+              "final_price": "8499.00"
+            }
+          ]
+        }
+      ],
+      "category_id": "cat-001",
+      "category_name": "AEROFLEX COLLECTION",
+      "average_rating": 4.5,
+      "review_count": 238,
+      "is_in_stock": true
+    },
+    {
+      "id": "b2c3d4e5-f6g7-8901-bcde-fg2345678901",
+      "name": "Classic Sneaker",
+      "slug": "classic-sneaker",
+      "description": "Timeless Design Casual Wear",
+      "base_price": "9500.00",
+      "sale_price": null,
+      "effective_price": "9500.00",
+      "discount_percentage": null,
+      "is_on_sale": false,
+      "is_flash_sale": true,
+      "flash_sale_price": "7125.00",
+      "flash_sale_ends_at": "2026-06-15T23:59:59Z",
+      "is_flash_active": true,
+      "is_featured": false,
+      "is_active": true,
+      "primary_image": "https://iljvzwluibwuxyjavpwb.supabase.co/storage/v1/object/public/products/classic-sneaker-white.jpg",
+      "images": [
+        {
+          "id": "img-101",
+          "image": "products/classic-sneaker-white.jpg",
+          "url": "https://iljvzwluibwuxyjavpwb.supabase.co/storage/v1/object/public/products/classic-sneaker-white.jpg",
+          "alt_text": "Classic Sneaker - White",
+          "color": "White",
+          "is_primary": true,
+          "order": 0
+        },
+        {
+          "id": "img-102",
+          "image": "products/classic-sneaker-black.jpg",
+          "url": "https://iljvzwluibwuxyjavpwb.supabase.co/storage/v1/object/public/products/classic-sneaker-black.jpg",
+          "alt_text": "Classic Sneaker - Black",
+          "color": "Black",
+          "is_primary": false,
+          "order": 1
+        }
+      ],
+      "color_variants": [
+        {
+          "color": "White",
+          "image_url": "https://iljvzwluibwuxyjavpwb.supabase.co/storage/v1/object/public/products/classic-sneaker-white.jpg",
+          "in_stock": true,
+          "sizes": [
+            {
+              "size": "39",
+              "variant_id": "var-101",
+              "sku": "CLASSIC-WHT-39",
+              "stock_qty": 15,
+              "price_modifier": "0.00",
+              "final_price": "7125.00"
+            },
+            {
+              "size": "40",
+              "variant_id": "var-102",
+              "sku": "CLASSIC-WHT-40",
+              "stock_qty": 20,
+              "price_modifier": "0.00",
+              "final_price": "7125.00"
+            },
+            {
+              "size": "41",
+              "variant_id": "var-103",
+              "sku": "CLASSIC-WHT-41",
+              "stock_qty": 18,
+              "price_modifier": "0.00",
+              "final_price": "7125.00"
+            }
+          ]
+        },
+        {
+          "color": "Black",
+          "image_url": "https://iljvzwluibwuxyjavpwb.supabase.co/storage/v1/object/public/products/classic-sneaker-black.jpg",
+          "in_stock": true,
+          "sizes": [
+            {
+              "size": "40",
+              "variant_id": "var-104",
+              "sku": "CLASSIC-BLK-40",
+              "stock_qty": 12,
+              "price_modifier": "0.00",
+              "final_price": "7125.00"
+            },
+            {
+              "size": "41",
+              "variant_id": "var-105",
+              "sku": "CLASSIC-BLK-41",
+              "stock_qty": 8,
+              "price_modifier": "0.00",
+              "final_price": "7125.00"
+            },
+            {
+              "size": "42",
+              "variant_id": "var-106",
+              "sku": "CLASSIC-BLK-42",
+              "stock_qty": 14,
+              "price_modifier": "0.00",
+              "final_price": "7125.00"
+            }
+          ]
+        }
+      ],
+      "category_id": "cat-002",
+      "category_name": "LIFESTYLE",
+      "average_rating": 4.2,
+      "review_count": 156,
+      "is_in_stock": true
+    }
+  ],
+  "total_pages": 5,
+  "current_page": 1
+}

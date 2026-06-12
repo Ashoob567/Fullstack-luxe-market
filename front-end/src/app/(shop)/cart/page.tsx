@@ -42,7 +42,7 @@ export default function CartPage() {
             <CartSummary total={totalPrice} />
           </div>
 
-          <Button className="w-full" size="lg" onClick={() => router.push('/checkout')}>
+          <Button className="w-full" size="md" onClick={() => router.push('/checkout')}>
             Proceed to Checkout
           </Button>
 

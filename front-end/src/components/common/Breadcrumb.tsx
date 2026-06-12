@@ -23,9 +23,9 @@ export function Breadcrumb({ items }: BreadcrumbProps) {
     <BreadcrumbUi>
       <BreadcrumbList>
         <BreadcrumbItem>
-          <BreadcrumbLink >
+          
             <Link href="/">Home</Link>
-          </BreadcrumbLink>
+          
         </BreadcrumbItem>
         {items.map((item, index) => {
           const isLast = index === items.length - 1;
@@ -37,9 +37,9 @@ export function Breadcrumb({ items }: BreadcrumbProps) {
               {isLast ? (
                 <BreadcrumbPage>{item.label}</BreadcrumbPage>
               ) : (
-                <BreadcrumbLink >
+                
                   <Link href={item.href!}>{item.label}</Link>
-                </BreadcrumbLink>
+                
               )}
             </BreadcrumbItem>
           );

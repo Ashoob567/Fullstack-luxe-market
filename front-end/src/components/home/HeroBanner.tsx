@@ -2,6 +2,8 @@
 
 import * as React from "react";
 import Link from "next/link";
+import Image from "next/image";
+import { motion } from "framer-motion";
 import {
   Carousel,
   CarouselContent,
@@ -10,15 +12,16 @@ import {
 } from "@/components/ui/carousel";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+
 // ---------------------------------------------------------------------------
-// Slide data
+// Slide data - OPTIMIZED: Reduced animation delays
 // ---------------------------------------------------------------------------
 const slides = [
   {
     id: "watches",
     bg: "#2C2416",
-    // swap this src for a real product photo; placeholder kept for dev
-    imageSrc: "https://images.unsplash.com/photo-1523170335258-f5ed11844a49?w=1400&q=80",
+    // ⚡ Optimized: Smaller size (1200px instead of 1400px) and lower quality (70 instead of 80)
+    imageSrc: "https://images.unsplash.com/photo-1523170335258-f5ed11844a49?w=1200&q=70&fm=webp&fit=crop",
     gradientFrom: "#2C2416",
     headline: "Timeless\nElegance",
     subtext: "Crafted for those who live with precision.",
@@ -29,7 +32,8 @@ const slides = [
   {
     id: "undergarments",
     bg: "#3D1829",
-    imageSrc: "https://images.unsplash.com/photo-1512436991641-6745cdb1723f?w=1400&q=80",
+    // ⚡ Optimized: Smaller size and lower quality
+    imageSrc: "https://images.unsplash.com/photo-1512436991641-6745cdb1723f?w=1200&q=70&fm=webp&fit=crop",
     gradientFrom: "#3D1829",
     headline: "Comfort\nMeets Style",
     subtext: "Luxurious comfort for every moment.",
@@ -65,7 +69,7 @@ export default function HeroBanner() {
   return (
     <section
       aria-label="Featured collections"
-      className="w-full min-h-[520px] md:min-h-[640px] relative select-none"
+      className="w-full min-h-[480px] md:min-h-[85vh] relative select-none"
     >
       <Carousel
         setApi={setApi}
@@ -73,86 +77,131 @@ export default function HeroBanner() {
         className="w-full h-full"
       >
         <CarouselContent className="h-full m-0">
-          {slides.map((slide) => (
+          {slides.map((slide, idx) => (
             <CarouselItem key={slide.id} className="p-0 h-full">
               {/* Slide shell */}
               <div
-                className="relative overflow-hidden w-full min-h-[520px] md:min-h-[640px] flex items-end"
+                className="relative overflow-hidden w-full min-h-[480px] md:min-h-[85vh] flex items-end"
                 style={{ backgroundColor: slide.bg }}
               >
-                {/* Product photograph */}
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
+                {/* Noise texture overlay for luxury feel */}
+                <div
+                  className="absolute inset-0 z-[1] opacity-[0.03] pointer-events-none"
+                  style={{
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E")`,
+                    backgroundRepeat: "repeat",
+                    backgroundSize: "128px 128px",
+                  }}
+                />
+
+                {/* ✅ OPTIMIZED: Next.js Image with priority for first slide */}
+                <Image
                   src={slide.imageSrc}
                   alt=""
-                  aria-hidden="true"
-                  className="absolute inset-0 w-full h-full object-cover object-center"
-                  draggable={false}
+                  fill
+                  priority={idx === 0} // ⚡ Preload first slide image
+                  quality={75} // ⚡ Lower quality for faster load
+                  sizes="100vw"
+                  loading={idx === 0 ? "eager" : "lazy"} // ⚡ Eager load first image
+                  className="object-cover object-center"
+                  style={{ objectFit: 'cover' }}
+                  fetchPriority={idx === 0 ? "high" : "low"} // ⚡ High priority for first image
+                  unoptimized // ⚡ Skip Next.js optimization since Unsplash already optimized
                 />
 
                 {/* Gradient overlay — covers left 60%, fades right */}
                 <div
-                  className="absolute inset-0"
+                  className="absolute inset-0 z-[2]"
                   style={{
-                    background: `linear-gradient(to right, ${slide.gradientFrom}CC 0%, ${slide.gradientFrom}66 45%, transparent 75%)`,
+                    background: `linear-gradient(to right, ${slide.gradientFrom}E6 0%, ${slide.gradientFrom}99 45%, transparent 75%)`,
                   }}
                 />
 
                 {/* Subtle bottom vignette for text legibility */}
                 <div
-                  className="absolute inset-0"
+                  className="absolute inset-0 z-[2]"
                   style={{
-                    background: `linear-gradient(to top, ${slide.gradientFrom}99 0%, transparent 40%)`,
+                    background: `linear-gradient(to top, ${slide.gradientFrom}CC 0%, transparent 50%)`,
                   }}
                 />
 
                 {/* Copy block — bottom-1/3, left-aligned */}
-                <div className="absolute bottom-1/3 left-12 md:left-20 z-10 max-w-sm md:max-w-md">
-                  {/* Eyebrow rule */}
+                <div className="absolute bottom-1/3 left-10 md:left-20 z-10 max-w-sm md:max-w-lg">
+                  {/* Eyebrow - NO ANIMATION for faster LCP */}
                   <span
-                    className="block mb-4 text-xs tracking-[0.25em] uppercase"
-                    style={{ color: "#B5A98A" }}
+                    className="block mb-4 text-xs tracking-[0.3em] uppercase"
+                    style={{ color: "#C9A84C" }}
                   >
                     Luxe Market
                   </span>
 
-                  {/* Headline */}
+                  {/* Gold underline accent - NO ANIMATION for faster LCP */}
+                  <div
+                    className="mb-4 h-px w-12"
+                    style={{ backgroundColor: "#C9A84C" }}
+                  />
+
+                  {/* ✅ CRITICAL LCP ELEMENT - NO ANIMATION for instant render */}
                   <h2
-                    className="font-serif font-bold text-4xl md:text-6xl leading-tight whitespace-pre-line"
-                    style={{ color: "#F5F0E8" }}
+                    className="font-bold text-5xl md:text-7xl leading-[1.05] whitespace-pre-line mb-2"
+                    style={{
+                      color: "#F5F0E8",
+                      fontFamily: "var(--font-serif), Georgia, serif",
+                      textShadow: "0 2px 40px rgba(0,0,0,0.4)",
+                    }}
                   >
                     {slide.headline}
                   </h2>
 
                   {/* Sub-text */}
-                  <p
-                    className="text-sm mt-3 mb-8"
-                    style={{ color: "#B5A98A" }}
+                  <motion.p
+                    key={`sub-${slide.id}-${current}`}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: 0.2 }} // ⚡ Reduced
+                    className="text-sm mt-4 mb-8 leading-relaxed"
+                    style={{ color: "#B5A98A", fontFamily: "var(--font-dm), sans-serif" }}
                   >
                     {slide.subtext}
-                  </p>
+                  </motion.p>
 
-                  {/* CTA */}
-                  <Button
-                    
-                    className="rounded-md px-8 py-3 font-medium text-sm transition-colors duration-200 hover:bg-white"
-                    style={{
-                      backgroundColor: "#F5F0E8",
-                      color: slide.ctaTextColor,
-                      border: "none",
-                    }}
+                  {/* CTA buttons */}
+                  <motion.div
+                    key={`cta-${slide.id}-${current}`}
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: 0.3 }} // ⚡ Reduced
+                    className="flex items-center gap-4"
                   >
-                    <Link href={slide.ctaHref}>{slide.ctaLabel}</Link>
-                  </Button>
+                    <Button
+                      className="rounded-sm px-8 py-3 font-medium text-sm transition-all duration-200 hover:scale-[1.02] hover:shadow-[0_0_20px_rgba(201,168,76,0.4)]"
+                      style={{
+                        backgroundColor: "#C9A84C",
+                        color: "#0a0a0a",
+                        border: "none",
+                        fontFamily: "var(--font-dm), sans-serif",
+                        letterSpacing: "0.05em",
+                      }}
+                    >
+                      <Link href={slide.ctaHref}>{slide.ctaLabel}</Link>
+                    </Button>
+
+                    <Link
+                      href="/products"
+                      className="text-sm font-medium tracking-wide transition-colors duration-200 flex items-center gap-2 group"
+                      style={{ color: "#F5F0E8", fontFamily: "var(--font-dm), sans-serif" }}
+                    >
+                      View All
+                      <span className="group-hover:translate-x-1 transition-transform duration-200">→</span>
+                    </Link>
+                  </motion.div>
                 </div>
               </div>
             </CarouselItem>
           ))}
         </CarouselContent>
 
-        {/* ----------------------------------------------------------------
-            Prev / Next arrows — bottom-right, circle, frosted glass
-        ---------------------------------------------------------------- */}
+        {/* Prev / Next arrows — bottom-right */}
         <div className="absolute bottom-8 right-8 md:right-12 z-20 flex items-center gap-2">
           {/* Dot indicators */}
           <div className="flex gap-1.5 mr-3" aria-hidden="true">
@@ -162,13 +211,13 @@ export default function HeroBanner() {
                 onClick={() => api?.scrollTo(i)}
                 className="transition-all duration-300"
                 style={{
-                  width: i === current ? "20px" : "6px",
+                  width: i === current ? "24px" : "6px",
                   height: "6px",
                   borderRadius: "3px",
                   backgroundColor:
                     i === current
-                      ? "#F5F0E8"
-                      : "rgba(245,240,232,0.35)",
+                      ? "#C9A84C"
+                      : "rgba(201,168,76,0.3)",
                   border: "none",
                   cursor: "pointer",
                 }}
@@ -180,22 +229,22 @@ export default function HeroBanner() {
           <button
             aria-label="Previous slide"
             onClick={() => api?.scrollPrev()}
-            className="flex items-center justify-center w-9 h-9 rounded-full transition-colors duration-200"
+            className="flex items-center justify-center w-9 h-9 rounded-full transition-all duration-200"
             style={{
-              backgroundColor: "rgba(255,255,255,0.18)",
+              backgroundColor: "rgba(201,168,76,0.15)",
               backdropFilter: "blur(6px)",
               WebkitBackdropFilter: "blur(6px)",
-              border: "1px solid rgba(255,255,255,0.2)",
-              color: "#F5F0E8",
+              border: "1px solid rgba(201,168,76,0.3)",
+              color: "#C9A84C",
               cursor: "pointer",
             }}
             onMouseEnter={(e) => {
               (e.currentTarget as HTMLButtonElement).style.backgroundColor =
-                "rgba(255,255,255,0.30)";
+                "rgba(201,168,76,0.3)";
             }}
             onMouseLeave={(e) => {
               (e.currentTarget as HTMLButtonElement).style.backgroundColor =
-                "rgba(255,255,255,0.18)";
+                "rgba(201,168,76,0.15)";
             }}
           >
             <ChevronLeft size={16} />
@@ -205,22 +254,22 @@ export default function HeroBanner() {
           <button
             aria-label="Next slide"
             onClick={() => api?.scrollNext()}
-            className="flex items-center justify-center w-9 h-9 rounded-full transition-colors duration-200"
+            className="flex items-center justify-center w-9 h-9 rounded-full transition-all duration-200"
             style={{
-              backgroundColor: "rgba(255,255,255,0.18)",
+              backgroundColor: "rgba(201,168,76,0.15)",
               backdropFilter: "blur(6px)",
               WebkitBackdropFilter: "blur(6px)",
-              border: "1px solid rgba(255,255,255,0.2)",
-              color: "#F5F0E8",
+              border: "1px solid rgba(201,168,76,0.3)",
+              color: "#C9A84C",
               cursor: "pointer",
             }}
             onMouseEnter={(e) => {
               (e.currentTarget as HTMLButtonElement).style.backgroundColor =
-                "rgba(255,255,255,0.30)";
+                "rgba(201,168,76,0.3)";
             }}
             onMouseLeave={(e) => {
               (e.currentTarget as HTMLButtonElement).style.backgroundColor =
-                "rgba(255,255,255,0.18)";
+                "rgba(201,168,76,0.15)";
             }}
           >
             <ChevronRight size={16} />

@@ -1,11 +1,14 @@
-import { Fragment } from "react";
+"use client";
+
+import { Fragment, useRef } from "react";
 import { Truck, Shield, Package, RefreshCw } from "lucide-react";
+import { motion, useInView } from "framer-motion";
 
 const badges = [
   {
     icon: Truck,
     title: "Free Delivery",
-    subtitle: "On orders over PKR 2,000",
+    subtitle: "On orders over PKR 3,000",
   },
   {
     icon: Shield,
@@ -25,32 +28,87 @@ const badges = [
 ];
 
 export default function TrustBadges() {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: "-40px" });
+
   return (
-    <section className="bg-[#F5F3EF] border-y border-[#E2D9CC] py-10 px-4">
-      <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6">
+    <section
+      className="relative px-4 py-12"
+      style={{ backgroundColor: "#0f0f1a" }}
+    >
+      {/* Gold top border */}
+      <div
+        className="absolute top-0 left-0 right-0 h-px"
+        style={{
+          background:
+            "linear-gradient(90deg, transparent 0%, #C9A84C 30%, #E8C97A 50%, #C9A84C 70%, transparent 100%)",
+        }}
+      />
+      {/* Gold bottom border */}
+      <div
+        className="absolute bottom-0 left-0 right-0 h-px"
+        style={{
+          background:
+            "linear-gradient(90deg, transparent 0%, #C9A84C 30%, #E8C97A 50%, #C9A84C 70%, transparent 100%)",
+        }}
+      />
+
+      <div ref={ref} className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-0">
         {badges.map((badge, index) => {
           const Icon = badge.icon;
           return (
-            // ✅ Fix: <Fragment key={...}> so key is on the outermost element
             <Fragment key={badge.title}>
-              <div className="flex flex-col items-center text-center gap-2"
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={isInView ? { opacity: 1, y: 0 } : {}}
+                transition={{
+                  duration: 0.5,
+                  delay: index * 0.1,
+                  ease: [0.22, 1, 0.36, 1],
+                }}
+                className="flex flex-col items-center text-center gap-3 px-4 py-6 group"
               >
-                <Icon
-                  size={32}
-                  className="text-[#1B3A5C]"
-                  strokeWidth={1.5}
-                />
-                <p className="font-medium text-sm text-[#2C2416]">
+                {/* Icon container */}
+                <div
+                  className="flex items-center justify-center w-12 h-12 rounded-sm transition-all duration-300 group-hover:shadow-[0_0_16px_rgba(201,168,76,0.3)]"
+                  style={{
+                    border: "1px solid rgba(201,168,76,0.3)",
+                    backgroundColor: "rgba(201,168,76,0.05)",
+                  }}
+                >
+                  <Icon
+                    size={22}
+                    strokeWidth={1.5}
+                    style={{ color: "#C9A84C" }}
+                  />
+                </div>
+
+                <p
+                  className="font-semibold text-sm tracking-wide"
+                  style={{
+                    color: "#F5F0E8",
+                    fontFamily: "'DM Sans', sans-serif",
+                  }}
+                >
                   {badge.title}
                 </p>
-                <p className="text-xs text-[#9A8870] max-w-[120px] mx-auto leading-relaxed">
+                <p
+                  className="text-xs leading-relaxed max-w-[120px] mx-auto"
+                  style={{
+                    color: "#6B8FAF",
+                    fontFamily: "'DM Sans', sans-serif",
+                  }}
+                >
                   {badge.subtitle}
                 </p>
-              </div>
+              </motion.div>
 
               {/* Vertical divider between badges — desktop only */}
               {index < badges.length - 1 && (
-                <div className="hidden md:block w-px bg-[#D8CFC0] self-stretch" />
+                <div
+                  className="hidden md:block w-px self-stretch my-4"
+                  style={{ backgroundColor: "rgba(201,168,76,0.15)" }}
+                />
               )}
             </Fragment>
           );

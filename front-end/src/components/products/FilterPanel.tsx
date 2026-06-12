@@ -23,14 +23,14 @@ interface FilterPanelProps {
 
 export function FilterPanel({ categories, onFilterChange }: FilterPanelProps) {
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 100000]);
-  const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
   const [selectedColors, setSelectedColors] = useState<string[]>([]);
 
   const sizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'One Size'];
   const colors = ['Black', 'White', 'Brown', 'Silver', 'Gold', 'Rose Gold', 'Blue', 'Red'];
 
-  const handleCategoryToggle = (categoryId: number) => {
+  const handleCategoryToggle = (categoryId: string) => {
     setSelectedCategories((prev) =>
       prev.includes(categoryId)
         ? prev.filter((id) => id !== categoryId)
@@ -68,10 +68,10 @@ export function FilterPanel({ categories, onFilterChange }: FilterPanelProps) {
     onFilterChange({});
   };
 
-  const filterContent = (
+  const filterFiltersContent = () => (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <SheetTitle>Filters</SheetTitle>
+        <h3 className="font-semibold text-lg">Filters</h3>
         <Button variant="ghost" size="sm" onClick={clearFilters}>
           <X className="h-4 w-4 mr-1" />
           Clear
@@ -153,12 +153,12 @@ export function FilterPanel({ categories, onFilterChange }: FilterPanelProps) {
   return (
     <>
       <div className="hidden lg:block w-64 shrink-0 space-y-6">
-        {filterContent}
+        {filterFiltersContent()}
       </div>
 
       <div className="lg:hidden">
         <Sheet>
-          <SheetTrigger >
+          <SheetTrigger asChild>
             <Button variant="outline" size="sm">
               <Filter className="h-4 w-4 mr-2" />
               Filters
@@ -168,7 +168,7 @@ export function FilterPanel({ categories, onFilterChange }: FilterPanelProps) {
             <SheetHeader>
               <SheetTitle>Filters</SheetTitle>
             </SheetHeader>
-            <div className="mt-6">{filterContent}</div>
+            <div className="mt-6">{filterFiltersContent()}</div>
           </SheetContent>
         </Sheet>
       </div>

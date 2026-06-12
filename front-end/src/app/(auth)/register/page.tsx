@@ -16,11 +16,11 @@ import { post } from '@/lib/api';
 
 const registerSchema = z.object({
   email: z.string().email('Invalid email address'),
-  firstName: z.string().min(1, 'First name is required'),
-  lastName: z.string().min(1, 'Last name is required'),
+  first_name: z.string().min(1, 'First name is required'),
+  last_name: z.string().min(1, 'Last name is required'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
-  confirmPassword: z.string(),
-}).refine((data) => data.password === data.confirmPassword, {
+  confirm_password: z.string(),
+}).refine((data) => data.password === data.confirm_password, {
   message: "Passwords don't match",
   path: ['confirmPassword'],
 });
@@ -43,7 +43,7 @@ export default function RegisterPage() {
   const onSubmit = async (data: RegisterFormData) => {
     setIsLoading(true);
     try {
-      const { confirmPassword, ...registerData } = data;
+      const registerData = data;
       const response = await post<{ access: string; refresh: string; user: Record<string, unknown> }>(
         '/api/auth/register/',
         registerData
@@ -71,16 +71,16 @@ export default function RegisterPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="firstName">First Name</Label>
-                <Input id="firstName" {...register('firstName')} />
-                {errors.firstName && (
-                  <p className="text-sm text-destructive">{errors.firstName.message}</p>
+                <Input id="firstName" {...register('first_name')} />
+                {errors.first_name && (
+                  <p className="text-sm text-destructive">{errors.first_name.message}</p>
                 )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="lastName">Last Name</Label>
-                <Input id="lastName" {...register('lastName')} />
-                {errors.lastName && (
-                  <p className="text-sm text-destructive">{errors.lastName.message}</p>
+                <Input id="lastName" {...register('last_name')} />
+                {errors.last_name && (
+                  <p className="text-sm text-destructive">{errors.last_name.message}</p>
                 )}
               </div>
             </div>
@@ -103,9 +103,9 @@ export default function RegisterPage() {
 
             <div className="space-y-2">
               <Label htmlFor="confirmPassword">Confirm Password</Label>
-              <Input id="confirmPassword" type="password" {...register('confirmPassword')} />
-              {errors.confirmPassword && (
-                <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>
+              <Input id="confirmPassword" type="password" {...register('confirm_password')} />
+              {errors.confirm_password && (
+                <p className="text-sm text-destructive">{errors.confirm_password.message}</p>
               )}
             </div>
 

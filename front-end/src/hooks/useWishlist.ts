@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 
 export function useWishlist() {
-  const [wishlist, setWishlist] = useState<number[]>([]);
+  const [wishlist, setWishlist] = useState<string[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
@@ -18,7 +18,7 @@ export function useWishlist() {
     }
   }, []);
 
-  const addToWishlist = (productId: number) => {
+  const addToWishlist = (productId: string) => {
     if (!wishlist.includes(productId)) {
       const updated = [...wishlist, productId];
       setWishlist(updated);
@@ -28,7 +28,7 @@ export function useWishlist() {
     }
   };
 
-  const removeFromWishlist = (productId: number) => {
+  const removeFromWishlist = (productId: string) => {
     const updated = wishlist.filter((id) => id !== productId);
     setWishlist(updated);
     if (typeof window !== 'undefined') {
@@ -36,7 +36,7 @@ export function useWishlist() {
     }
   };
 
-  const isInWishlist = (productId: number) => {
+  const isInWishlist = (productId: string) => {
     return wishlist.includes(productId);
   };
 

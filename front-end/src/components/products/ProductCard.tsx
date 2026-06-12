@@ -1,382 +1,204 @@
-// src/components/products/ProductCard.tsx
-"use client";
+'use client';
 
-import { useState, useMemo, useCallback } from "react";
-import Image from "next/image";
-import { Heart, ShoppingCart, Zap, Star } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { useState, useMemo, useCallback, memo } from 'react';
+import { useRouter } from 'next/navigation';
+import { Heart } from 'lucide-react';
+import { toast } from 'sonner';
 
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Card } from '@/components/ui/card';
+import { ProductCardImage } from './ProductCardImage';
+import { ProductCardActions } from './ProductCardActions';
+import { StarRating } from './StarRating';
+import { PriceDisplay } from './PriceDisplay';
+import { VariantModal } from './VariantModal';
 
-import type { Product, ProductVariant } from "@/types/product";
-import type { CartItem } from "@/types/order";
+import type { ProductDetail, ProductList as ProductCardShape, ProductVariant } from '@/types';
+import type { CartItem } from '@/types';
 
-import { useCartStore } from "@/store/cartStore";
+import { useCartStore } from '@/store/cartStore';
+import { useWishlistStore } from '@/hooks/useWishlistStore';
 
-// ─────────────────────────────────────────────────────────────
-// Brand Colors
-// ─────────────────────────────────────────────────────────────
 const BRAND = {
-  navy: "#1B3A5C",
-  gold: "#8B6914",
-  espresso: "#2C2416",
-  sand: "#F5F3EF",
-  red: "#C0392B",
+  espresso: '#2C2416',
+  red: '#C0392B',
 } as const;
 
-// ─────────────────────────────────────────────────────────────
-// Star Rating
-// ─────────────────────────────────────────────────────────────
-function StarRow() {
-  return (
-    <div className="flex items-center gap-1">
-      {Array.from({ length: 5 }).map((_, i) => (
-        <Star
-          key={i}
-          size={11}
-          fill={BRAND.gold}
-          stroke={BRAND.gold}
-          strokeWidth={1.4}
-        />
-      ))}
-
-      <span className="text-[10px] text-[#7A7060] ml-1">(New)</span>
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────
-// Variant Modal
-// ─────────────────────────────────────────────────────────────
-interface VariantModalProps {
-  product: Product;
-  onClose: () => void;
-  onConfirm: (variant: ProductVariant) => void;
-}
-
-function VariantModal({
-  product,
-  onClose,
-  onConfirm,
-}: VariantModalProps) {
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-
-  const selectedVariant =
-    product.variants.find((v) => v.id === selectedId) || null;
-
-  return (
-    <div
-      className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center"
-      onClick={onClose}
-    >
-      <div
-        className="w-full max-w-sm rounded-2xl shadow-2xl p-6 mx-4"
-        style={{ backgroundColor: BRAND.sand }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <h3
-          className="text-base font-semibold mb-1"
-          style={{ color: BRAND.espresso }}
-        >
-          Select Variant
-        </h3>
-
-        <p className="text-xs text-muted-foreground mb-4">
-          {product.name}
-        </p>
-
-        <div className="space-y-2">
-          {product.variants.map((variant) => {
-            const active = variant.id === selectedId;
-
-            const finalPrice =
-              Number(variant.final_price);
-
-            return (
-              <button
-                key={variant.id}
-                onClick={() => setSelectedId(variant.id)}
-                className={cn(
-                  "w-full rounded-xl border px-3 py-2 text-left transition",
-                  active && "border-[#1B3A5C] bg-white"
-                )}
-              >
-                <div className="flex justify-between">
-                  <div>
-                    <p className="text-sm font-medium">
-                      {variant.size || "Standard"}
-                      {variant.color &&
-                        ` • ${variant.color}`}
-                    </p>
-
-                    <p className="text-xs text-muted-foreground">
-                      SKU: {variant.sku}
-                    </p>
-                  </div>
-
-                  <p className="font-semibold text-sm">
-                    ${finalPrice.toFixed(2)}
-                  </p>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-
-        <div className="flex gap-3 mt-5">
-          <Button
-            variant="outline"
-            className="flex-1"
-            onClick={onClose}
-          >
-            Cancel
-          </Button>
-
-          <Button
-            className="flex-1 text-white"
-            style={{ backgroundColor: BRAND.navy }}
-            disabled={!selectedVariant}
-            onClick={() => {
-              if (selectedVariant) {
-                onConfirm(selectedVariant);
-                onClose();
-              }
-            }}
-          >
-            Add To Cart
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────
-// Product Card
-// ─────────────────────────────────────────────────────────────
 interface ProductCardProps {
-  product: Product;
+  product: ProductDetail | ProductCardShape;
+  priority?: boolean; // For LCP optimization - set true for above-the-fold images
 }
 
-export function ProductCard({
-  product,
-}: ProductCardProps) {
+// Memoize the ProductCard component to prevent unnecessary re-renders
+export const ProductCard = memo(function ProductCard({ product, priority = false }: ProductCardProps) {
   const addItem = useCartStore((s) => s.addItem);
+  const openDrawer = useCartStore((s) => s.openDrawer);
+  const router = useRouter();
+  const { isInWishlist, toggleWishlist: toggleWishlistStore, isLoading: wishlistLoading } = useWishlistStore();
+  const [showModal, setShowModal] = useState(false);
 
-  const [wishlisted, setWishlisted] =
-    useState(false);
+  const wishlisted = isInWishlist(product.id);
 
-  const [showModal, setShowModal] =
-    useState(false);
+  // Cache expensive computations - moved outside useMemo for better performance
+  const imageUrl = product.primary_image ||
+    ('images' in product && Array.isArray(product.images)
+      ? (product.images.find((img) => img.is_primary)?.url || product.images[0]?.url || '/placeholder.png')
+      : '/placeholder.png');
 
-  // Primary Image
-  const imageUrl =
-  product.primary_image ||
-  product.images?.find(
-    (img) => img.is_primary
-  )?.image ||
-  product.images?.[0]?.image ||
-  "/placeholder.png";
+  const variants: ProductVariant[] =
+    ('variants' in product && Array.isArray(product.variants) ? product.variants : []);
 
-  // ✅ Fix: guard against undefined variants (API list items may omit this field)
-  const variants = product.variants ?? [];
-
-  // Cheapest Variant
-  const cheapestVariant = useMemo(() => {
-    return [...variants].sort((a, b) => {
-      const aPrice = Number(a.final_price);
-      const bPrice = Number(b.final_price);
-      return aPrice - bPrice;
-    })[0];
+  const cheapestVariant = useMemo<ProductVariant | undefined>(() => {
+    if (variants.length === 0) return undefined;
+    // Optimization: Use reduce instead of sort for O(n) vs O(n log n)
+    return variants.reduce((min, v) =>
+      Number(v.final_price) < Number(min.final_price) ? v : min
+    );
   }, [variants]);
 
-  const inStock =
-    variants.some((v) => v.stock_qty > 0) || product.is_in_stock;
+  const inStock = variants.length > 0
+    ? variants.some((v) => v.is_in_stock)
+    : product.is_in_stock;
 
   const hasVariants = variants.length > 1;
 
-  const displayPrice =Number(cheapestVariant?.final_price ?? 0);
+  const displayPrice = cheapestVariant
+    ? Number(cheapestVariant.final_price)
+    : Number(product.effective_price);
 
-  const originalPrice =
-    product.sale_price
+  const originalPrice = (product.is_flash_active || product.is_on_sale)
     ? Number(product.base_price)
     : null;
 
-  // Create Cart Item
+  const discountPercentage = useMemo(() => {
+    const value = Number(product.discount_percentage ?? 0);
+    return Number.isFinite(value) && value > 0 ? value : 0;
+  }, [product.discount_percentage]);
+
+  const categoryLabel =
+    'category_name' in product ? (product.category_name ?? '') : (product.category?.name ?? '');
+
   const createCartItem = useCallback(
-    (variant: ProductVariant): CartItem => ({
-      productId: product.id,
-      variantId: variant.id,
-      name: product.name,
-      slug: product.slug,
-      image: imageUrl,
-      price: Number(variant.final_price),
-      salePrice: null,
-      size: variant.size,
-      color: variant.color,
-      quantity: 1,
-    }),
+    (variant: ProductVariant): Omit<CartItem, 'cart_item_id'> => {
+      const finalPrice = Number(variant.final_price).toFixed(2);
+
+      return {
+        product_id: product.id,
+        variant_id: variant.id,
+        name: product.name,
+        image: imageUrl,
+        price: finalPrice,
+        size: variant.size ?? '',
+        color: variant.color ?? '',
+        quantity: 1,
+      };
+    },
     [product, imageUrl]
   );
 
-  // Wishlist
-  const handleWishlist = () => {
-    setWishlisted((prev) => !prev);
+  const handleWishlist = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    // Prepare product data for guest wishlist
+    await toggleWishlistStore(product.id, {
+      name: product.name,
+      price: String(displayPrice),
+      image: imageUrl,
+      slug: product.slug,
+      category: categoryLabel,
+    });
   };
 
-  // Add To Cart
   const handleAddToCart = () => {
     if (hasVariants) {
       setShowModal(true);
       return;
     }
-
-    addItem(createCartItem(cheapestVariant));
+    if (cheapestVariant) {
+      addItem(createCartItem(cheapestVariant));
+      toast.success('Added to cart');
+      openDrawer();
+      return;
+    }
+    toast.info('Select a variant to add to cart');
+    router.push(`/products/${product.slug}`);
   };
 
-  // Buy Now
   const handleBuyNow = () => {
-    handleAddToCart();
-
-    // router.push("/checkout")
+    if (hasVariants) {
+      setShowModal(true);
+      return;
+    }
+    if (cheapestVariant) {
+      addItem(createCartItem(cheapestVariant));
+      toast.success('Added to cart');
+      router.push('/checkout');
+      return;
+    }
+    toast.info('Select a variant to continue');
+    router.push(`/products/${product.slug}`);
   };
 
   return (
     <>
-      <Card className="group overflow-hidden rounded-xl border border-[#E8E4DC] hover:shadow-md transition">
-        {/* Image */}
-        <div className="relative aspect-[3/4] bg-[#F0EDE8] overflow-hidden">
-          <Image
-            src={imageUrl}
-            alt={product.name}
-            fill
-            className="object-cover transition duration-300 group-hover:scale-105"
+      <Card className="group relative overflow-hidden rounded-xl border border-[#E8E4DC] hover:shadow-md transition">
+        <div className="relative">
+          <ProductCardImage
+            imageUrl={imageUrl}
+            productName={product.name}
+            isFlashActive={product.is_flash_active}
+            isOnSale={product.is_on_sale}
+            priority={priority}
           />
 
-          {/* Flash Sale */}
-          {product.is_flash_sale && (
-            <Badge
-              className="absolute top-3 left-3 text-white"
-              style={{
-                backgroundColor: BRAND.red,
-              }}
-            >
-              Flash Sale
-            </Badge>
-          )}
-
-          {/* Wishlist */}
+          {/* Wishlist button overlay */}
           <button
             onClick={handleWishlist}
-            className="absolute top-3 right-3 h-8 w-8 rounded-full bg-white shadow flex items-center justify-center"
+            disabled={wishlistLoading}
+            aria-label={wishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
+            className="absolute top-3 right-3 h-8 w-8 rounded-full bg-white shadow flex items-center justify-center hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Heart
               size={14}
-              fill={
-                wishlisted
-                  ? BRAND.red
-                  : "none"
-              }
-              stroke={
-                wishlisted
-                  ? BRAND.red
-                  : "#9C9488"
-              }
+              fill={wishlisted ? BRAND.red : 'none'}
+              stroke={wishlisted ? BRAND.red : '#9C9488'}
             />
           </button>
         </div>
 
-        {/* Content */}
         <div className="p-3 flex flex-col gap-2">
-          {/* Category */}
-          <p className="text-[11px] uppercase tracking-widest text-[#9C9488]">
-            {(product as any).category_name}
-          </p>
+          <p className="text-[11px] uppercase tracking-widest text-[#9C9488]">{categoryLabel}</p>
 
-          {/* Name */}
-          <h3
-            className="text-sm font-medium line-clamp-1"
-            style={{
-              color: BRAND.espresso,
-            }}
-          >
+          <h3 className="text-sm font-medium line-clamp-1" style={{ color: BRAND.espresso }}>
             {product.name}
           </h3>
 
-          <StarRow />
+          <StarRating rating={product.average_rating} size={11} />
 
-          {/* Price */}
-          <div className="flex items-center gap-2">
-            <span
-              className="font-bold"
-              style={{
-                color: BRAND.gold,
-              }}
-            >
-              ${displayPrice.toFixed(2)}
-            </span>
+          <PriceDisplay
+            price={displayPrice}
+            originalPrice={originalPrice}
+            discountPercentage={discountPercentage}
+            size="sm"
+          />
 
-            {originalPrice && (
-              <span className="text-xs line-through text-muted-foreground">
-                ${originalPrice.toFixed(2)}
-              </span>
-            )}
-          </div>
-
-          {/* Buttons */}
-          <div className="flex gap-2 pt-2">
-            <Button
-              size="sm"
-              className="flex-1 text-white"
-              style={{
-                backgroundColor:
-                  BRAND.navy,
-              }}
-              disabled={!inStock}
-              onClick={handleAddToCart}
-            >
-              <ShoppingCart size={14} />
-              Add
-            </Button>
-
-            <Button
-              size="sm"
-              variant="outline"
-              className="flex-1"
-              disabled={!inStock}
-              onClick={handleBuyNow}
-            >
-              <Zap size={14} />
-              Buy
-            </Button>
-          </div>
-
-          {!inStock && (
-            <p className="text-[10px] uppercase text-center text-muted-foreground">
-              Out of Stock
-            </p>
-          )}
+          <ProductCardActions inStock={inStock} onAddToCart={handleAddToCart} onBuyNow={handleBuyNow} />
         </div>
       </Card>
 
-      {/* Modal */}
-      {showModal && (
+      {showModal && 'variants' in product && (
         <VariantModal
-          product={{ ...product, variants }}
-          onClose={() =>
-            setShowModal(false)
-          }
-          onConfirm={(variant) =>
-            addItem(
-              createCartItem(variant)
-            )
-          }
+          product={product as ProductDetail}
+          onClose={() => setShowModal(false)}
+          onConfirm={(variant) => {
+            addItem(createCartItem(variant));
+            toast.success('Added to cart');
+            openDrawer();
+          }}
         />
       )}
     </>
   );
-}
+});
 
 export default ProductCard;

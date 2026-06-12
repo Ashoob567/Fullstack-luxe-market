@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Product } from '@/types/product';
+import { ProductDetail } from '@/types';
 import { get } from '@/lib/api';
 
 interface UseSearchOptions {
@@ -13,7 +13,7 @@ interface UseSearchOptions {
 }
 
 export function useSearch(options: UseSearchOptions = {}) {
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<ProductDetail[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [count, setCount] = useState(0);
@@ -33,7 +33,7 @@ export function useSearch(options: UseSearchOptions = {}) {
       if (searchOptions.color) params.set('color', searchOptions.color);
       if (searchOptions.ordering) params.set('ordering', searchOptions.ordering);
 
-      const response = await get<{ results: Product[]; count: number }>('/api/products/', {
+      const response = await get<{ results: ProductDetail[]; count: number }>('/api/products/', {
         params,
       });
 

@@ -30,6 +30,10 @@ CSRF_COOKIE_SECURE = True
 # Allow only specified hosts
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',')
 
+
+SECURE_SSL_REDIRECT = True
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
 # Logging
 LOGGING = {
     'version': 1,

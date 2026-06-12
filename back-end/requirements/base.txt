@@ -9,8 +9,18 @@ Pillow>=10.0
 django-filter>=23.5
 dj-database-url>=2.1
 whitenoise>=6.6
+django-nested-admin>=4.0
 
 # Supabase Storage
 storage3>=0.9
 supabase>=2.0
 httpx>=0.24
+
+
+#redis dependencies
+redis>=5.0
+django-redis>=5.4
+django-ratelimit>=4.1
+
+# HTTP requests (for Next.js cache revalidation)
+requests>=2.31.0

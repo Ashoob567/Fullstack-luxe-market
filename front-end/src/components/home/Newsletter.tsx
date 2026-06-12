@@ -1,13 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
-
-import { toast } from "sonner"; 
+import { useEffect, useState, useRef } from "react";
+import { motion, useInView } from "framer-motion";
+import { toast } from "sonner";
 
 function NewsletterSection() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
- 
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: "-60px" });
+
   async function handleSubscribe() {
     if (!email) return;
     setLoading(true);
@@ -26,52 +28,109 @@ function NewsletterSection() {
       setLoading(false);
     }
   }
- 
+
   return (
-    <section className="bg-[#2C2416] py-20 px-4 text-center">
-      <p className="text-xs uppercase tracking-widest text-[#B5A98A] mb-3">Stay in the Loop</p>
- 
-      <h2
-        className="font-bold text-4xl text-[#F5F0E8]"
-        style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
-      >
-        Get Exclusive Offers
-      </h2>
- 
-      <p className="text-sm text-[#B5A98A] mt-2 mb-10 max-w-sm mx-auto leading-relaxed">
-        Early access to new arrivals, member-only discounts, and style notes delivered quietly to
-        your inbox.
-      </p>
- 
-      <div className="flex max-w-md mx-auto gap-0">
-        <input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleSubscribe()}
-          placeholder="your@email.com"
-          className="flex-1 bg-[#F5F0E8] text-[#2C2416] px-5 py-3.5 rounded-l-md border-0 outline-none placeholder-[#9A8870] text-sm"
-        />
-        <button
-          onClick={handleSubscribe}
-          disabled={loading}
-          className="bg-[#1B3A5C] text-white px-7 py-3.5 rounded-r-md font-medium text-sm hover:bg-[#15304E] transition-colors duration-200 disabled:opacity-70 flex items-center gap-2"
+    <motion.section
+      ref={ref}
+      initial={{ opacity: 0, y: 32 }}
+      animate={isInView ? { opacity: 1, y: 0 } : {}}
+      transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+      className="relative py-24 px-4 text-center overflow-hidden"
+      style={{ backgroundColor: "#0a0a0a" }}
+    >
+      {/* Radial gold glow */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background:
+            "radial-gradient(ellipse 70% 60% at 50% 50%, rgba(201,168,76,0.06) 0%, transparent 70%)",
+        }}
+      />
+
+      {/* Gold top border */}
+      <div
+        className="absolute top-0 left-0 right-0 h-px"
+        style={{
+          background:
+            "linear-gradient(90deg, transparent 0%, #C9A84C 30%, #E8C97A 50%, #C9A84C 70%, transparent 100%)",
+        }}
+      />
+
+      <div className="relative z-10 max-w-xl mx-auto">
+        <p
+          className="text-xs uppercase tracking-[0.3em] mb-3"
+          style={{ color: "#C9A84C", fontFamily: "'DM Sans', sans-serif" }}
         >
-          {loading ? (
-            <>
-              <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-              </svg>
-              Subscribing…
-            </>
-          ) : (
-            "Subscribe"
-          )}
-        </button>
+          Stay in the Loop
+        </p>
+
+        <h2
+          className="font-bold text-4xl md:text-5xl"
+          style={{
+            color: "#F5F0E8",
+            fontFamily: "'Playfair Display', Georgia, serif",
+          }}
+        >
+          Get Exclusive Offers
+        </h2>
+
+        {/* Gold divider */}
+        <div
+          className="mx-auto mt-4 mb-4 h-px w-16"
+          style={{ backgroundColor: "#C9A84C" }}
+        />
+
+        <p
+          className="text-sm leading-relaxed mb-10"
+          style={{ color: "#6B8FAF", fontFamily: "'DM Sans', sans-serif" }}
+        >
+          Early access to new arrivals, member-only discounts, and style notes
+          delivered quietly to your inbox.
+        </p>
+
+        <div className="flex max-w-md mx-auto gap-0 rounded-sm overflow-hidden"
+          style={{ border: "1px solid rgba(201,168,76,0.3)" }}
+        >
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleSubscribe()}
+            placeholder="your@email.com"
+            className="flex-1 px-5 py-3.5 text-sm outline-none"
+            style={{
+              backgroundColor: "#0f0f1a",
+              color: "#F5F0E8",
+              fontFamily: "'DM Sans', sans-serif",
+            }}
+          />
+          <button
+            onClick={handleSubscribe}
+            disabled={loading}
+            className="px-7 py-3.5 font-medium text-sm transition-all duration-200 disabled:opacity-70 flex items-center gap-2 hover:shadow-[0_0_16px_rgba(201,168,76,0.4)]"
+            style={{
+              backgroundColor: "#C9A84C",
+              color: "#0a0a0a",
+              fontFamily: "'DM Sans', sans-serif",
+              letterSpacing: "0.05em",
+            }}
+          >
+            {loading ? (
+              <>
+                <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                </svg>
+                Subscribing…
+              </>
+            ) : (
+              "Subscribe"
+            )}
+          </button>
+        </div>
       </div>
-    </section>
+    </motion.section>
   );
 }
 
- export default NewsletterSection
+export default NewsletterSection;

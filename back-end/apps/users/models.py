@@ -3,6 +3,10 @@ import uuid
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
 
+# Re-export UserAddress so Django's app registry discovers it under the 'users' app label.
+# The model is defined in address_models.py to keep files manageable.
+from .address_models import UserAddress  # noqa: F401
+
 
 class CustomUserManager(BaseUserManager):
     """Custom manager for CustomUser model."""

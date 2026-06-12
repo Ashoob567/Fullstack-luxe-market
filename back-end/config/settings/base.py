@@ -31,15 +31,19 @@ INSTALLED_APPS = [
     # Third party apps
     'rest_framework',
     'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
     'django_filters',
     'whitenoise.runserver_nostatic',
+    'nested_admin',  # For nested inline admin (Color → Size)
     # Local apps
     'apps.users',
     'apps.products',
     'apps.orders',
     'apps.payments',
     'apps.cart',
+    'apps.coupons',
+    'apps.wishlists',
 ]
 
 MIDDLEWARE = [
@@ -134,8 +138,26 @@ SIMPLE_JWT = {
 # CORS Settings
 CORS_ALLOWED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS', '').split(',')
 AUTH_USER_MODEL='users.CustomUser'
+CORS_ALLOW_CREDENTIALS = True
 
 # Supabase Storage Settings
 SUPABASE_URL = os.getenv('SUPABASE_URL', '')
 SUPABASE_KEY = os.getenv('SUPABASE_KEY', '')
 SUPABASE_BUCKET = os.getenv('SUPABASE_BUCKET', 'luxe-market-images')
+
+
+#redis storage setting
+
+SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
+SESSION_CACHE_ALIAS = 'default'
+REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379")
+
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": REDIS_URL,
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        }
+    }
+}
