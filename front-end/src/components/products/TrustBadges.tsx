@@ -7,16 +7,9 @@ interface TrustBadgeProps {
 
 function TrustBadge({ icon, label }: TrustBadgeProps) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-      <span style={{ color: '#8B6F47', display: 'flex' }}>{icon}</span>
-      <span
-        style={{
-          fontFamily: "'DM Sans', sans-serif",
-          fontWeight: 500,
-          fontSize: '0.8rem',
-          color: '#5C4A32',
-        }}
-      >
+    <div className="flex items-center gap-2">
+      <span className="flex text-[#8B6F47]">{icon}</span>
+      <span className="font-['DM_Sans',sans-serif] font-medium text-[0.8rem] text-[#5C4A32]">
         {label}
       </span>
     </div>
@@ -25,15 +18,7 @@ function TrustBadge({ icon, label }: TrustBadgeProps) {
 
 export function TrustBadges() {
   return (
-    <div
-      style={{
-        borderTop: '1px solid #E8E0D5',
-        paddingTop: '20px',
-        display: 'flex',
-        gap: '16px',
-        flexWrap: 'wrap',
-      }}
-    >
+    <div className="border-t border-[#E8E0D5] pt-5 flex gap-4 flex-wrap">
       <TrustBadge icon={<RotateCcw size={20} />} label="Free Returns" />
       <TrustBadge icon={<ShieldCheck size={20} />} label="Secure Payment" />
       <TrustBadge icon={<Package size={20} />} label="Discreet Packaging" />

@@ -50,51 +50,41 @@ export default function CategoryCard({ category, index }: Props) {
       </div>
 
       {/* Dark overlay */}
-      <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a]/90 via-[#0a0a0a]/40 to-transparent transition-opacity duration-500 group-hover:opacity-90" />
+      <div className="absolute inset-0 bg-gradient-to-t from-brand-dark/90 via-brand-dark/40 to-transparent transition-opacity duration-500 group-hover:opacity-90" />
 
       {/* Gold shimmer border */}
       <div
         className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
-        style={{ boxShadow: "inset 0 0 0 1px rgba(201,168,76,0.4)" }}
+        style={{ boxShadow: "inset 0 0 0 1px rgba(201, 168, 76, 0.4)" }}
       />
 
       {/* Card Content */}
       <div className="absolute bottom-0 left-0 p-8 z-20">
         <p
-          className="text-xs tracking-[0.25em] uppercase mb-2 opacity-0 group-hover:opacity-100 transition-all duration-500 translate-y-2 group-hover:translate-y-0"
-          style={{ color: "#C9A84C", fontFamily: "'DM Sans', sans-serif" }}
+          className="text-xs tracking-[0.25em] uppercase mb-2 opacity-0 group-hover:opacity-100 transition-all duration-500 translate-y-2 group-hover:translate-y-0 text-brand-gold font-['DM_Sans',sans-serif]"
         >
           Collection
         </p>
 
         <h2
-          className="font-serif font-bold text-3xl text-white leading-tight tracking-wide"
-          style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
+          className="font-serif font-bold text-3xl text-white leading-tight tracking-wide font-['Playfair_Display',Georgia,serif]"
         >
           {category.name}
         </h2>
 
         <div
-          className="mt-2 mb-3 h-px w-0 group-hover:w-12 transition-all duration-500"
-          style={{ backgroundColor: "#C9A84C" }}
+          className="mt-2 mb-3 h-px w-0 group-hover:w-12 transition-all duration-500 bg-brand-gold"
         />
 
         <p
-          className="text-[#D8CFC0] text-sm italic leading-snug max-w-[260px] line-clamp-2"
-          style={{ fontFamily: "'DM Sans', sans-serif" }}
+          className="text-[#D8CFC0] text-sm italic leading-snug max-w-[260px] line-clamp-2 font-['DM_Sans',sans-serif]"
         >
           {tagline}
         </p>
 
         {/* ✅ Button ke andar alag onClick nahi — Link poora card cover kar raha hai */}
         <div
-          className="mt-5 text-sm font-medium px-6 py-2.5 rounded-sm inline-flex items-center gap-2 transition-all duration-300 group-hover:shadow-[0_0_20px_rgba(201,168,76,0.35)]"
-          style={{
-            backgroundColor: "#C9A84C",
-            color: "#0a0a0a",
-            fontFamily: "'DM Sans', sans-serif",
-            letterSpacing: "0.05em",
-          }}
+          className="mt-5 text-sm font-medium px-6 py-2.5 rounded-sm inline-flex items-center gap-2 transition-all duration-300 group-hover:shadow-[0_0_20px_rgba(201,168,76,0.35)] bg-brand-gold text-brand-dark font-['DM_Sans',sans-serif] tracking-wider"
         >
           Explore
           <ArrowRight size={15} strokeWidth={2} />

@@ -40,12 +40,12 @@ export function CartDrawer() {
           <>
             <div className="flex-1 overflow-y-auto py-4 space-y-4">
               {items.map((item) => (
-                <CartItem key={item.variantId} item={item} />
+                <CartItem key={item.cart_item_id} item={item} />
               ))}
             </div>
 
             <div className="border-t pt-4 space-y-4">
-              <CartSummary total={totalPrice} />
+              <CartSummary />
               <Button className="w-full" size="md" onClick={handleCheckout}>
                 Proceed to Checkout
               </Button>

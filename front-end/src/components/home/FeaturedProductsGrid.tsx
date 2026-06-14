@@ -23,7 +23,7 @@ export default function FeaturedProductsGrid({ products }: Props) {
   if (products.length === 0) {
     return (
       <div className="py-16 text-center">
-        <p className="text-sm" style={{ color: "#6B8FAF" }}>
+        <p className="text-sm text-brand-text-muted">
           No featured products available.
         </p>
       </div>

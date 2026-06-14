@@ -17,23 +17,22 @@ export default function CategoryGridHeader() {
       className="mb-10"
     >
       <p
-        className="text-xs tracking-[0.3em] uppercase font-medium mb-2"
-        style={{ color: "#C9A84C", fontFamily: "'DM Sans', sans-serif" }}
+        className="text-xs tracking-[0.3em] uppercase font-medium mb-2 text-brand-gold"
+        style={{ fontFamily: "'DM Sans', sans-serif" }}
       >
         Collections
       </p>
 
       <h2
-        className="font-serif text-4xl md:text-5xl font-bold leading-tight"
+        className="font-serif text-4xl md:text-5xl font-bold leading-tight text-brand-text-light"
         style={{
           fontFamily: "'Playfair Display', Georgia, serif",
-          color: "#F5F0E8",
         }}
       >
         Shop by Category
       </h2>
 
-      <div className="mt-4 h-px w-16" style={{ backgroundColor: "#C9A84C" }} />
+      <div className="mt-4 h-px w-16 bg-brand-gold" />
     </motion.div>
   );
 }

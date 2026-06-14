@@ -1,17 +1,35 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { serverGet } from '@/lib/api-server';
-import { ProductDetail } from '@/types/product';
-import { Breadcrumb } from '@/components/common/Breadcrumb';
-import { ProductDetailClient } from '@/components/products/Productdetailclient';
+import { ProductList } from '@/types/product';
+import { ProductDetailPageV2 } from '@/components/products/ProductDetailPageV2';
 
-async function getProduct(slug: string): Promise<ProductDetail> {
+async function getProduct(slug: string): Promise<ProductList> {
   try {
-    return await serverGet<ProductDetail>(`/api/products/${slug}/`, {
-      revalidate: 3600,
-      tags: ['product', `product-${slug}`],
-    });
-  } catch {
+    // Fetch products from list endpoint with large page size
+    // The list endpoint includes color_variants_new which we need
+    const response = await serverGet<{ results: ProductList[]; count: number }>(
+      `/api/products/?page_size=100`,
+      {
+        revalidate: 3600,
+        tags: ['products'],
+      }
+    );
+
+    if (!response.results || response.results.length === 0) {
+      notFound();
+    }
+
+    // Find the specific product by slug
+    const product = response.results.find((p) => p.slug === slug);
+
+    if (!product) {
+      notFound();
+    }
+
+    return product;
+  } catch (error) {
+    console.error('Error fetching product:', error);
     notFound();
   }
 }
@@ -35,21 +53,5 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
   const { slug } = await params;
   const product = await getProduct(slug);
 
-  return (
-    <div className="container py-8">
-      <Breadcrumb
-        items={[
-          { label: 'Products', href: '/products' },
-          ...(product.category
-            ? [{ label: product.category.name, href: `/category/${product.category.slug}` }]
-            : []),
-          { label: product.name },
-        ]}
-      />
-
-      <div className="mt-8">
-        <ProductDetailClient product={product} />
-      </div>
-    </div>
-  );
+  return <ProductDetailPageV2 product={product} />;
 }

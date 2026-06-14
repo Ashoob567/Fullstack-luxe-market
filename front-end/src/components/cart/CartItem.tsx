@@ -2,6 +2,7 @@
 
 import { Trash2, Loader2 } from "lucide-react";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { CartItem as CartItemType } from "@/types";
 import { formatPrice } from "@/lib/utils";
 import { useCartStore } from "@/store/cartStore";
@@ -12,6 +13,7 @@ interface CartItemProps {
 }
 
 export function CartItem({ item }: CartItemProps) {
+  const router = useRouter();
   const { updateQuantity, removeItem } = useCartStore();
   const { error } = useToast();
   const [isUpdating, setIsUpdating] = useState(false);
@@ -48,95 +50,35 @@ export function CartItem({ item }: CartItemProps) {
 
   if (isRemoving) {
     return (
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: "32px 16px",
-          borderBottom: "1px solid #E8E0D5",
-          opacity: 0.5,
-        }}
-      >
-        <Loader2 size={20} style={{ animation: "spin 1s linear infinite" }} />
-        <style jsx>{`
-          @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-          }
-        `}</style>
+      <div className="flex items-center justify-center py-8 px-4 border-b border-brand-border opacity-50">
+        <Loader2 size={20} className="animate-spin" />
       </div>
     );
   }
 
   return (
     <div
-      style={{
-        display: "flex",
-        gap: "14px",
-        padding: "16px 0",
-        borderBottom: "1px solid #E8E0D5",
-        opacity: isUpdating ? 0.6 : 1,
-        transition: "opacity 0.2s",
-      }}
+      className="flex gap-3.5 py-4 border-b border-brand-border transition-opacity duration-200"
+      style={{ opacity: isUpdating ? 0.6 : 1 }}
     >
       {/* Product image */}
-      <div
-        style={{
-          width: "72px",
-          height: "72px",
-          flexShrink: 0,
-          background: "#F5F0E8",
-          borderRadius: "12px",
-          overflow: "hidden",
-          border: "1px solid #E8E0D5",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
+      <div className="w-[72px] h-[72px] shrink-0 bg-brand-text-light rounded-xl overflow-hidden border border-brand-border flex items-center justify-center">
         {item.image ? (
           <img
             src={item.image}
             alt={item.name}
-            style={{
-              width: "100%",
-              height: "100%",
-              objectFit: "contain",
-              padding: "6px",
-            }}
+            className="w-full h-full object-contain p-1.5"
           />
         ) : (
-          <div
-            style={{
-              width: "100%",
-              height: "100%",
-              background: "#F5F0E8",
-            }}
-          />
+          <div className="w-full h-full bg-brand-text-light" />
         )}
       </div>
 
       {/* Middle: info + controls */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "6px" }}>
+      <div className="flex-1 flex flex-col gap-1.5">
         {/* Name + trash row */}
-        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "8px" }}>
-          <p
-            style={{
-              fontFamily: "'DM Sans', sans-serif",
-              fontWeight: 600,
-              fontSize: "0.9rem",
-              color: "#3D2F1F",
-              lineHeight: 1.3,
-              margin: 0,
-              display: "-webkit-box",
-              WebkitLineClamp: 2,
-              WebkitBoxOrient: "vertical",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              maxWidth: "calc(100% - 28px)",
-            }}
-          >
+        <div className="flex items-start justify-between gap-2">
+          <p className="font-dm-sans font-semibold text-[0.9rem] text-brand-brown leading-tight m-0 line-clamp-2 max-w-[calc(100%-28px)]">
             {item.name}
           </p>
 
@@ -144,75 +86,37 @@ export function CartItem({ item }: CartItemProps) {
             onClick={handleRemove}
             disabled={isRemoving || isUpdating}
             aria-label="Remove item"
-            style={{
-              background: "none",
-              border: "none",
-              padding: "2px",
-              cursor: isRemoving || isUpdating ? "not-allowed" : "pointer",
-              color: "#A09080",
-              flexShrink: 0,
-              lineHeight: 1,
-              transition: "color 0.15s ease",
-            }}
-            onMouseEnter={(e) => {
-              if (!isRemoving && !isUpdating) {
-                (e.currentTarget as HTMLButtonElement).style.color = "#C4621A";
-              }
-            }}
-            onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.color = "#A09080")}
+            className="bg-transparent border-none p-0.5 shrink-0 leading-none transition-colors duration-150 text-brand-text-gold-muted hover:text-brand-accent disabled:cursor-not-allowed"
+            style={{ cursor: isRemoving || isUpdating ? "not-allowed" : "pointer" }}
           >
             <Trash2 size={16} />
           </button>
         </div>
 
-        {/* Variant info */}
+        {/* Variant info with edit button */}
         {(item.size || item.color) && (
-          <p
-            style={{
-              fontFamily: "'DM Sans', sans-serif",
-              fontWeight: 400,
-              fontSize: "0.8rem",
-              color: "#A09080",
-              margin: "3px 0 0",
-            }}
-          >
-            {[item.size, item.color].filter(Boolean).join(" · ")}
-          </p>
+          <div className="flex items-center gap-2 mt-0.5">
+            <p className="font-dm-sans font-normal text-[0.8rem] text-brand-text-gold-muted m-0">
+              {[item.size, item.color].filter(Boolean).join(" · ")}
+            </p>
+            {item.slug && (
+              <button
+                onClick={() => router.push(`/products/${item.slug}?edit=${cartItemId}`)}
+                className="font-dm-sans font-medium text-[0.75rem] text-brand-gold hover:text-brand-text-gold-light bg-transparent border-none p-0 cursor-pointer transition-colors duration-150"
+              >
+                Edit
+              </button>
+            )}
+          </div>
         )}
 
         {/* Quantity controls + subtotal row */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            marginTop: "auto",
-          }}
-        >
+        <div className="flex items-center justify-between mt-auto">
           {/* Stepper */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              background: "#F5F0E8",
-              borderRadius: "8px",
-              padding: "2px",
-              position: "relative",
-            }}
-          >
+          <div className="flex items-center bg-brand-text-light rounded-lg p-0.5 relative">
             {isUpdating && (
-              <div
-                style={{
-                  position: "absolute",
-                  inset: 0,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  background: "rgba(245, 240, 232, 0.9)",
-                  borderRadius: "8px",
-                }}
-              >
-                <Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} />
+              <div className="absolute inset-0 flex items-center justify-center rounded-lg" style={{ background: "rgba(245, 240, 232, 0.9)" }}>
+                <Loader2 size={16} className="animate-spin" />
               </div>
             )}
 
@@ -220,42 +124,13 @@ export function CartItem({ item }: CartItemProps) {
               onClick={() => handleUpdateQuantity(item.quantity - 1)}
               disabled={item.quantity <= 1 || isUpdating || !cartItemId}
               aria-label="Decrease quantity"
-              style={{
-                width: "32px",
-                height: "32px",
-                borderRadius: "6px",
-                background: "transparent",
-                border: "none",
-                color: "#3D2F1F",
-                fontSize: "1.1rem",
-                cursor: item.quantity <= 1 || isUpdating ? "not-allowed" : "pointer",
-                opacity: item.quantity <= 1 || isUpdating ? 0.3 : 1,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                transition: "background 0.12s ease",
-              }}
-              onMouseEnter={(e) => {
-                if (item.quantity > 1 && !isUpdating)
-                  (e.currentTarget as HTMLButtonElement).style.background = "#E8E0D5";
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.background = "transparent";
-              }}
+              className="w-8 h-8 rounded-md bg-transparent border-none text-brand-brown text-lg flex items-center justify-center transition-all duration-[120ms] hover:bg-brand-border disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent"
+              style={{ cursor: item.quantity <= 1 || isUpdating ? "not-allowed" : "pointer" }}
             >
               −
             </button>
 
-            <span
-              style={{
-                minWidth: "28px",
-                textAlign: "center",
-                fontFamily: "'DM Sans', sans-serif",
-                fontWeight: 700,
-                fontSize: "0.875rem",
-                color: "#3D2F1F",
-              }}
-            >
+            <span className="min-w-[28px] text-center font-dm-sans font-bold text-sm text-brand-brown">
               {item.quantity}
             </span>
 
@@ -263,54 +138,19 @@ export function CartItem({ item }: CartItemProps) {
               onClick={() => handleUpdateQuantity(item.quantity + 1)}
               disabled={isUpdating || !cartItemId}
               aria-label="Increase quantity"
-              style={{
-                width: "32px",
-                height: "32px",
-                borderRadius: "6px",
-                background: "transparent",
-                border: "none",
-                color: "#3D2F1F",
-                fontSize: "1.1rem",
-                cursor: isUpdating ? "not-allowed" : "pointer",
-                opacity: isUpdating ? 0.6 : 1,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                transition: "background 0.12s ease",
-              }}
-              onMouseEnter={(e) => {
-                if (!isUpdating)
-                  (e.currentTarget as HTMLButtonElement).style.background = "#E8E0D5";
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.background = "transparent";
-              }}
+              className="w-8 h-8 rounded-md bg-transparent border-none text-brand-brown text-lg flex items-center justify-center transition-all duration-[120ms] hover:bg-brand-border disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-transparent"
+              style={{ cursor: isUpdating ? "not-allowed" : "pointer" }}
             >
               +
             </button>
           </div>
 
           {/* Subtotal */}
-          <span
-            style={{
-              fontFamily: "'DM Sans', sans-serif",
-              fontWeight: 700,
-              fontSize: "0.95rem",
-              color: "#3D2F1F",
-              alignSelf: "flex-end",
-            }}
-          >
+          <span className="font-dm-sans font-bold text-[0.95rem] text-brand-brown self-end">
             {formatPrice(subtotal)}
           </span>
         </div>
       </div>
-
-      <style jsx>{`
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
     </div>
   );
 }

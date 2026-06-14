@@ -129,11 +129,14 @@ class FeaturedProductsView(ListAPIView):
 
 
 class NewArrivalsView(ListAPIView):
-    serializer_class = ProductListSerializer
+    serializer_class = ProductListSerializerNew  # ✅ Use NEW structure with color_variants_new
     pagination_class = None
 
     def get_queryset(self):
-        return base_product_queryset().order_by("-created_at")
+        # Filter products with "new-arrival" tag (case-insensitive slug match)
+        return base_product_queryset().filter(
+            tags__slug__iexact="new-arrival"
+        ).distinct().order_by("-created_at")
 
     def list(self, request, *args, **kwargs):
         cache_key = 'new_arrivals_list'

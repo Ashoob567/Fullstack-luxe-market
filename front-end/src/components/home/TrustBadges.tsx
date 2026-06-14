@@ -32,10 +32,7 @@ export default function TrustBadges() {
   const isInView = useInView(ref, { once: true, margin: "-40px" });
 
   return (
-    <section
-      className="relative px-4 py-12"
-      style={{ backgroundColor: "#0f0f1a" }}
-    >
+    <section className="relative px-4 py-12 bg-brand-dark-secondary">
       {/* Gold top border */}
       <div
         className="absolute top-0 left-0 right-0 h-px"
@@ -70,32 +67,29 @@ export default function TrustBadges() {
               >
                 {/* Icon container */}
                 <div
-                  className="flex items-center justify-center w-12 h-12 rounded-sm transition-all duration-300 group-hover:shadow-[0_0_16px_rgba(201,168,76,0.3)]"
+                  className="flex items-center justify-center w-12 h-12 rounded-sm transition-all duration-300 group-hover:shadow-[0_0_16px_rgba(201,168,76,0.3)] border border-brand-gold/30"
                   style={{
-                    border: "1px solid rgba(201,168,76,0.3)",
                     backgroundColor: "rgba(201,168,76,0.05)",
                   }}
                 >
                   <Icon
                     size={22}
                     strokeWidth={1.5}
-                    style={{ color: "#C9A84C" }}
+                    className="text-brand-gold"
                   />
                 </div>
 
                 <p
-                  className="font-semibold text-sm tracking-wide"
+                  className="font-semibold text-sm tracking-wide text-brand-text-light"
                   style={{
-                    color: "#F5F0E8",
                     fontFamily: "'DM Sans', sans-serif",
                   }}
                 >
                   {badge.title}
                 </p>
                 <p
-                  className="text-xs leading-relaxed max-w-[120px] mx-auto"
+                  className="text-xs leading-relaxed max-w-[120px] mx-auto text-brand-text-muted"
                   style={{
-                    color: "#6B8FAF",
                     fontFamily: "'DM Sans', sans-serif",
                   }}
                 >
@@ -105,10 +99,7 @@ export default function TrustBadges() {
 
               {/* Vertical divider between badges — desktop only */}
               {index < badges.length - 1 && (
-                <div
-                  className="hidden md:block w-px self-stretch my-4"
-                  style={{ backgroundColor: "rgba(201,168,76,0.15)" }}
-                />
+                <div className="hidden md:block w-px self-stretch my-4 bg-brand-gold/15" />
               )}
             </Fragment>
           );

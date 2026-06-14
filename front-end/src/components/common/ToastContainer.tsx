@@ -10,11 +10,23 @@ const iconMap = {
   warning: AlertTriangle,
 };
 
-const colorMap = {
-  success: { bg: '#E8F5E9', border: '#4CAF50', text: '#2E7D32', icon: '#4CAF50' },
-  error: { bg: '#FFEBEE', border: '#F44336', text: '#C62828', icon: '#F44336' },
-  info: { bg: '#E3F2FD', border: '#2196F3', text: '#1565C0', icon: '#2196F3' },
-  warning: { bg: '#FFF3E0', border: '#FF9800', text: '#E65100', icon: '#FF9800' },
+const toastStyles = {
+  success: {
+    container: 'bg-green-50 border-green-500 text-green-800',
+    icon: '#4CAF50',
+  },
+  error: {
+    container: 'bg-red-50 border-red-500 text-red-800',
+    icon: '#F44336',
+  },
+  info: {
+    container: 'bg-blue-50 border-blue-500 text-blue-900',
+    icon: '#2196F3',
+  },
+  warning: {
+    container: 'bg-orange-50 border-orange-500 text-orange-900',
+    icon: '#FF9800',
+  },
 };
 
 export function ToastContainer() {
@@ -23,67 +35,25 @@ export function ToastContainer() {
   if (toasts.length === 0) return null;
 
   return (
-    <div
-      style={{
-        position: 'fixed',
-        top: '20px',
-        right: '20px',
-        zIndex: 9999,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '12px',
-        maxWidth: '400px',
-      }}
-    >
+    <div className="fixed top-5 right-5 z-[9999] flex flex-col gap-3 max-w-[400px]">
       {toasts.map((toast) => {
         const Icon = iconMap[toast.type];
-        const colors = colorMap[toast.type];
+        const styles = toastStyles[toast.type];
 
         return (
           <div
             key={toast.id}
-            style={{
-              background: colors.bg,
-              border: `1.5px solid ${colors.border}`,
-              borderRadius: '10px',
-              padding: '14px 16px',
-              display: 'flex',
-              alignItems: 'flex-start',
-              gap: '12px',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-              animation: 'slideIn 0.3s ease',
-            }}
+            className={`${styles.container} border-[1.5px] rounded-[10px] px-4 py-3.5 flex items-start gap-3 shadow-[0_4px_12px_rgba(0,0,0,0.1)] animate-[slideIn_0.3s_ease]`}
           >
-            <Icon size={20} color={colors.icon} style={{ flexShrink: 0, marginTop: '2px' }} />
+            <Icon size={20} color={styles.icon} className="shrink-0 mt-0.5" />
 
-            <p
-              style={{
-                flex: 1,
-                fontFamily: "'DM Sans', sans-serif",
-                fontSize: '0.9rem',
-                color: colors.text,
-                fontWeight: 500,
-                lineHeight: 1.5,
-                margin: 0,
-              }}
-            >
+            <p className="flex-1 font-['DM_Sans'] text-[0.9rem] font-medium leading-[1.5] m-0">
               {toast.message}
             </p>
 
             <button
               onClick={() => removeToast(toast.id)}
-              style={{
-                background: 'none',
-                border: 'none',
-                padding: '2px',
-                cursor: 'pointer',
-                color: colors.text,
-                opacity: 0.7,
-                flexShrink: 0,
-                transition: 'opacity 0.2s',
-              }}
-              onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.opacity = '1')}
-              onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.opacity = '0.7')}
+              className="bg-transparent border-none p-0.5 cursor-pointer opacity-70 hover:opacity-100 shrink-0 transition-opacity duration-200"
               aria-label="Close notification"
             >
               <X size={16} />

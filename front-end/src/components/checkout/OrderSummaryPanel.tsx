@@ -9,7 +9,7 @@ import { Badge }       from '@/components/ui/badge';
 import { Button }      from '@/components/ui/button';
 import { ShoppingBag, Truck, Tag, ChevronDown, ChevronUp } from 'lucide-react';
 import { cn }          from '@/lib/utils';
-import type { CartItem } from '@/types/order';
+import type { CartItem } from '@/types/cart';
 
 interface OrderSummaryPanelProps {
   items:          CartItem[];
@@ -72,11 +72,11 @@ export function OrderSummaryPanel({
         {/* Item list */}
         <ul className="space-y-3 max-h-72 overflow-y-auto pr-1">
           {items.map((item) => {
-            const price     = item.salePrice ?? item.price;
+            const price     = parseFloat(item.price);
             const lineTotal = price * item.quantity;
             return (
               <li
-                key={`${item.productId}-${item.variantId}`}
+                key={item.cart_item_id}
                 className="flex items-start gap-3"
               >
                 {/* Image */}
@@ -100,9 +100,6 @@ export function OrderSummaryPanel({
                   <p className="text-xs text-muted-foreground">
                     {[item.size, item.color].filter(Boolean).join(' · ')}
                   </p>
-                  {item.salePrice && (
-                    <p className="text-xs text-muted-foreground line-through">{pkr(item.price)}</p>
-                  )}
                 </div>
 
                 {/* Line total */}

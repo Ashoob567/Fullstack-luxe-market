@@ -16,7 +16,7 @@ import { OrderSummaryPanel }            from '@/components/checkout/OrderSummary
 import { useCheckout }                  from '@/hooks/useCheckout';
 import { mockCardSchema }               from '@/lib/validations/checkout';
 import { get }                          from '@/lib/api';
-import type { CartItem }                from '@/types/order';
+import type { CartItem }                from '@/types/cart';
 
 // ── Progress bar ──────────────────────────────────────────────────────────────
 
@@ -74,19 +74,26 @@ export default function CheckoutPage() {
     return () => sub.unsubscribe();
   }, [cardForm, checkout]);
 
-  // Fetch cart from backend Redis (requires auth — api.ts attaches Bearer token)
+  // Fetch cart from localStorage (guest checkout support)
   useEffect(() => {
     async function fetchCart() {
       try {
-        const data = await get<{ items: CartItem[]; discount_amount?: number; coupon_code?: string | null }>(
-          '/api/cart/'
-        );
-        const items: CartItem[] = data.items ?? [];
-        if (items.length === 0) { router.push('/cart'); return; }
+        // Get cart from localStorage
+        const savedCart = localStorage.getItem('cart');
+        if (!savedCart) {
+          router.push('/cart');
+          return;
+        }
 
-        // Backend cart items use `price` field (stored as float in Redis)
-        const sub  = items.reduce((acc, i) => acc + (i.salePrice ?? i.price) * i.quantity, 0);
-        const disc = data.discount_amount ?? 0;
+        const items: CartItem[] = JSON.parse(savedCart);
+        if (items.length === 0) {
+          router.push('/cart');
+          return;
+        }
+
+        // Calculate totals
+        const sub  = items.reduce((acc, i) => acc + Number(i.price) * i.quantity, 0);
+        const disc = 0; // No coupon for guest checkout yet
         const ship = sub >= 3000 ? 0 : 200;
 
         setCart(items);
@@ -94,10 +101,10 @@ export default function CheckoutPage() {
         setDiscount(disc);
         setShipping(ship);
         setTotal(sub - disc + ship);
-        setCouponCode(data.coupon_code ?? null);
+        setCouponCode(null);
       } catch (err: any) {
-        if (err?.response?.status === 401) { router.push('/login'); return; }
         toast.error('Could not load your cart. Please try again.');
+        router.push('/cart');
       } finally {
         setCartLoading(false);
       }

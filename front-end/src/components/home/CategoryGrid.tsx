@@ -32,7 +32,7 @@ export default async function CategoryGrid() {
   const categories = await getCategories();
 
   return (
-    <section className="py-16 px-4" style={{ backgroundColor: "#0f0f1a" }}>
+    <section className="py-16 px-4 bg-brand-dark-secondary">
       <div className="max-w-7xl mx-auto">
 
         {/* ✅ Header — Client (animation ke liye) */}

@@ -164,6 +164,7 @@ class ProductListSerializer(EffectivePriceMixin, serializers.ModelSerializer):
     primary_image = serializers.SerializerMethodField()
     images = serializers.SerializerMethodField()
     color_variants = serializers.SerializerMethodField()
+    tags = ProductTagSerializer(many=True, read_only=True)  # Product tags for badges
 
     discount_percentage = serializers.DecimalField(
         max_digits=5,
@@ -223,6 +224,7 @@ class ProductListSerializer(EffectivePriceMixin, serializers.ModelSerializer):
             "primary_image",
             "images",
             "color_variants",
+            "tags",  # Product tags for badges (NEW ARRIVAL, SALE, etc.)
             "category_id",
             "category_name",
             "average_rating",

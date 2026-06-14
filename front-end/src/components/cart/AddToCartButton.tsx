@@ -59,112 +59,72 @@ export function AddToCartButton({
     }
   };
 
-  // Size mappings
-  const sizeStyles = {
-    sm: {
-      padding: '8px 16px',
-      fontSize: '0.8rem',
-      iconSize: 16,
-    },
-    md: {
-      padding: '12px 24px',
-      fontSize: '0.9rem',
-      iconSize: 18,
-    },
-    lg: {
-      padding: '14px 28px',
-      fontSize: '1rem',
-      iconSize: 20,
-    },
+  // Size classes
+  const sizeClasses = {
+    sm: 'px-4 py-2 text-[0.8rem]',
+    md: 'px-6 py-3 text-[0.9rem]',
+    lg: 'px-7 py-[14px] text-base',
   };
 
-  const currentSize = sizeStyles[size];
-
-  // Variant styles
-  const variantStyles = {
-    default: {
-      background: disabled ? '#E8E0D5' : '#3D2F1F',
-      color: '#FFFFFF',
-      border: 'none',
-    },
-    outline: {
-      background: 'transparent',
-      color: disabled ? '#A09080' : '#3D2F1F',
-      border: `1.5px solid ${disabled ? '#E8E0D5' : '#3D2F1F'}`,
-    },
+  const iconSizes = {
+    sm: 16,
+    md: 18,
+    lg: 20,
   };
 
-  const currentVariant = variantStyles[variant];
+  // Variant classes
+  const variantClasses = {
+    default: disabled
+      ? 'bg-[#E8E0D5] text-white border-none'
+      : 'bg-[#3D2F1F] text-white border-none hover:bg-[#5C4A32]',
+    outline: disabled
+      ? 'bg-transparent text-[#A09080] border-[1.5px] border-[#E8E0D5]'
+      : 'bg-transparent text-[#3D2F1F] border-[1.5px] border-[#3D2F1F] hover:bg-brand-text-light',
+  };
 
   return (
     <button
       onClick={handleAddToCart}
       disabled={disabled || isAdding}
-      style={{
-        width: fullWidth ? '100%' : 'auto',
-        ...currentVariant,
-        borderRadius: '10px',
-        padding: currentSize.padding,
-        fontFamily: "'DM Sans', sans-serif",
-        fontWeight: 600,
-        fontSize: currentSize.fontSize,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: '10px',
-        cursor: disabled || isAdding ? 'not-allowed' : 'pointer',
-        opacity: disabled ? 0.5 : 1,
-        transition: 'all 0.2s ease',
-        position: 'relative',
-      }}
-      onMouseEnter={(e) => {
-        if (!disabled && !isAdding) {
-          const el = e.currentTarget as HTMLButtonElement;
-          if (variant === 'default') {
-            el.style.background = '#5C4A32';
-          } else {
-            el.style.background = '#F5F0E8';
-          }
-        }
-      }}
-      onMouseLeave={(e) => {
-        if (!disabled && !isAdding) {
-          const el = e.currentTarget as HTMLButtonElement;
-          el.style.background = currentVariant.background;
-        }
-      }}
+      className={`
+        ${fullWidth ? 'w-full' : 'w-auto'}
+        ${sizeClasses[size]}
+        ${variantClasses[variant]}
+        rounded-[10px]
+        font-['DM_Sans',sans-serif]
+        font-semibold
+        flex
+        items-center
+        justify-center
+        gap-[10px]
+        ${disabled || isAdding ? 'cursor-not-allowed' : 'cursor-pointer'}
+        ${disabled ? 'opacity-50' : 'opacity-100'}
+        transition-all
+        duration-200
+        ease-in-out
+        relative
+      `}
       aria-label={label}
     >
       {isAdding ? (
         <>
           <Loader2
-            size={currentSize.iconSize}
-            style={{ animation: 'spin 1s linear infinite' }}
+            size={iconSizes[size]}
+            className="animate-spin"
           />
           Adding...
         </>
       ) : showSuccess ? (
         <>
-          <Check size={currentSize.iconSize} />
+          <Check size={iconSizes[size]} />
           Added!
         </>
       ) : (
         <>
-          <ShoppingCart size={currentSize.iconSize} />
+          <ShoppingCart size={iconSizes[size]} />
           {label}
         </>
       )}
-
-      <style jsx>{`
-        @keyframes spin {
-          from {
-            transform: rotate(0deg);
-          }
-          to {
-            transform: rotate(360deg);
-          }
-        }
-      `}</style>
     </button>
   );
 }

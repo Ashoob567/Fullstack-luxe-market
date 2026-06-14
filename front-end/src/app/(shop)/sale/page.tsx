@@ -71,16 +71,13 @@ export default function SalePage() {
 
       {/* Header */}
       <div className="mt-6 mb-8">
-        <h1
-          className="text-3xl font-bold text-rose-600"
-          style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
-        >
+        <h1 className="text-3xl font-bold text-rose-600 font-serif">
           🔥 Flash Sale
         </h1>
         <p className="mt-2 text-muted-foreground max-w-2xl">
           Limited-time deals — grab them before they&apos;re gone!
         </p>
-        <p className="mt-1 text-sm text-[#A89880]">
+        <p className="mt-1 text-sm text-brand-text-gold-muted">
           {products.length} product{products.length !== 1 ? 's' : ''} on sale
         </p>
       </div>

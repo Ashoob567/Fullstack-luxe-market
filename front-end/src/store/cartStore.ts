@@ -24,6 +24,7 @@ interface CartState {
 
   // Actions
   addItem: (item: Omit<CartItem, 'cart_item_id'>) => Promise<void>;
+  updateItem: (cartItemId: string, updates: Partial<Omit<CartItem, 'cart_item_id' | 'product_id'>>) => Promise<void>;
   removeItem: (cartItemId: string) => Promise<void>;
   updateQuantity: (cartItemId: string, quantity: number) => Promise<void>;
   clearCart: () => Promise<void>;
@@ -130,6 +131,65 @@ export const useCartStore = create<CartState>((set, get) => ({
           items: state.items,
           isSyncing: false,
           lastError: error.response?.data?.error || 'Failed to add item to cart'
+        });
+        saveToLocalStorage(state.items);
+        throw error;
+      }
+    }
+  },
+
+  // ── Update Item ────────────────────────────────────────────────────
+  updateItem: async (cartItemId, updates) => {
+    const state = get();
+    const itemIndex = state.items.findIndex((item) => item.cart_item_id === cartItemId);
+
+    if (itemIndex === -1) {
+      throw new Error('Cart item not found');
+    }
+
+    // Optimistic update - merge updates into existing item
+    const optimisticItems = [...state.items];
+    optimisticItems[itemIndex] = {
+      ...optimisticItems[itemIndex],
+      ...updates,
+    };
+
+    set({ items: optimisticItems, lastError: null });
+    saveToLocalStorage(optimisticItems);
+
+    // Backend sync (if authenticated)
+    if (isAuthenticated()) {
+      set({ isSyncing: true });
+      try {
+        // If variant_id changed, we need to remove old item and add new one
+        if (updates.variant_id) {
+          await cartService.removeCartItem(cartItemId);
+          const response = await cartService.addToCart({
+            product_id: state.items[itemIndex].product_id,
+            variant_id: updates.variant_id,
+            quantity: updates.quantity || state.items[itemIndex].quantity,
+          });
+          const backendItems = transformBackendToCartItems(response);
+          set({ items: backendItems, isSyncing: false });
+          saveToLocalStorage(backendItems);
+        } else if (updates.quantity !== undefined) {
+          // Just quantity update
+          const response = await cartService.updateCartItem(cartItemId, updates.quantity);
+          const backendItems = transformBackendToCartItems(response);
+          set({ items: backendItems, isSyncing: false });
+          saveToLocalStorage(backendItems);
+        } else {
+          // Other updates (color, size, image, price) - only update localStorage for guests
+          set({ isSyncing: false });
+        }
+      } catch (error: any) {
+        console.error('[CartStore] Update item failed:', error);
+
+        // Rollback on failure
+        set({
+          items: state.items,
+          isSyncing: false,
+          lastError: error.response?.data?.error || 'Failed to update item'
         });
         saveToLocalStorage(state.items);
         throw error;

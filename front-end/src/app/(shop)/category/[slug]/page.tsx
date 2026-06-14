@@ -60,16 +60,13 @@ export default function CategoryPage() {
 
       {/* Header */}
       <div className="mt-6 mb-8">
-        <h1
-          className="text-3xl font-bold text-[#2C2416]"
-          style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
-        >
+        <h1 className="text-3xl font-bold text-[#2C2416] font-serif">
           {category.name}
         </h1>
         {category.description && (
           <p className="mt-2 text-muted-foreground max-w-2xl">{category.description}</p>
         )}
-        <p className="mt-1 text-sm text-[#A89880]">
+        <p className="mt-1 text-sm text-brand-text-gold-muted">
           {products.length} product{products.length !== 1 ? 's' : ''}
         </p>
       </div>

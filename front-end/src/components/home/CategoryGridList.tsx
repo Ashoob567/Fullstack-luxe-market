@@ -11,7 +11,7 @@ interface Props {
 export default function CategoryGridList({ categories }: Props) {
   if (categories.length === 0) {
     return (
-      <div className="text-center py-16 text-sm" style={{ color: "#6B8FAF" }}>
+      <div className="text-center py-16 text-sm text-brand-text-muted">
         <p>No categories available.</p>
       </div>
     );

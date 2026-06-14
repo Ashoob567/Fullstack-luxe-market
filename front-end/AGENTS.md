@@ -29,3 +29,4 @@ npm run lint        # eslint only — no separate type-check script
 - Payment is mock-only despite `@stripe/stripe-js` being installed. Methods: `mock_card` or `cod`. `src/lib/stripe.ts` exists but is not wired to real Stripe.
 - Currency is PKR throughout. No i18n/locale system.
 - `NEXT_PUBLIC_API_URL` env var points to Django backend (default: `http://localhost:8000`).
+- **Styling**: Use Tailwind brand color utilities (e.g., `bg-brand-gold`, `text-brand-text-light`), NOT inline `style={{}}`. All brand colors are defined in `src/app/globals.css` under `@theme`. See `COLOR_SYSTEM.md` for the full mapping. Only use inline styles for truly dynamic runtime values (e.g., `style={{ backgroundColor: variant.hex_color }}`).

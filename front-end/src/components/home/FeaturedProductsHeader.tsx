@@ -17,25 +17,19 @@ export default function FeaturedProductsHeader() {
       className="mb-14 text-center"
     >
       <p
-        className="text-xs font-medium uppercase tracking-[0.3em]"
-        style={{ color: "#C9A84C", fontFamily: "'DM Sans', sans-serif" }}
+        className="text-xs font-medium uppercase tracking-[0.3em] text-brand-gold font-['DM_Sans']"
       >
         Luxe Selection
       </p>
 
       <h2
-        className="mt-3 text-4xl md:text-5xl font-bold"
-        style={{
-          color: "#F5F0E8",
-          fontFamily: "'Playfair Display', Georgia, serif",
-        }}
+        className="mt-3 text-4xl md:text-5xl font-bold text-brand-text-light font-['Playfair_Display']"
       >
         Featured Products
       </h2>
 
       <p
-        className="mx-auto mt-3 max-w-xl text-sm leading-relaxed"
-        style={{ color: "#6B8FAF", fontFamily: "'DM Sans', sans-serif" }}
+        className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-brand-text-muted font-['DM_Sans']"
       >
         Discover premium watches, luxury essentials,
         and timeless fashion curated for modern style.
@@ -43,9 +37,9 @@ export default function FeaturedProductsHeader() {
 
       {/* Gold ornament */}
       <div className="mt-6 flex items-center justify-center gap-3">
-        <span className="h-px w-12" style={{ backgroundColor: "#C9A84C" }} />
-        <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: "#C9A84C" }} />
-        <span className="h-px w-12" style={{ backgroundColor: "#C9A84C" }} />
+        <span className="h-px w-12 bg-brand-gold" />
+        <span className="h-1.5 w-1.5 rounded-full bg-brand-gold" />
+        <span className="h-px w-12 bg-brand-gold" />
       </div>
     </motion.header>
   );

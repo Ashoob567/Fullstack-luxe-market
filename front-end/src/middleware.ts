@@ -9,7 +9,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-const protectedRoutes = ['/account', '/checkout'];
+const protectedRoutes = ['/account'];
 const publicAccountRoutes = ['/account/wishlist']; // Guest-accessible routes
 
 export function middleware(request: NextRequest) {
@@ -39,5 +39,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/account/:path*', '/checkout/:path*'],
+  matcher: ['/account/:path*'],
 };

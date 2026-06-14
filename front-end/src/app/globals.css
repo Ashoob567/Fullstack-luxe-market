@@ -51,6 +51,24 @@ body { background: var(--color-bg); font-family: var(--font-sans); }
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+
+  /* Luxe Market Brand Colors */
+  --color-brand-gold: #C9A84C;
+  --color-brand-dark: #0a0a0a;
+  --color-brand-dark-secondary: #0f0f1a;
+  --color-brand-dark-tertiary: #1a1a2e;
+  --color-brand-blue: #1B3A5C;
+  --color-brand-blue-light: #5B9BD5;
+  --color-brand-text-light: #F5F0E8;
+  --color-brand-text-muted: #6B8FAF;
+  --color-brand-text-secondary: #A8BDD1;
+  --color-brand-text-gold-muted: #B5A98A;
+  --color-brand-text-gold-light: #E8C97A;
+  --color-brand-bg-light: #FAF8F4;
+  --color-brand-bg-secondary: #F5F3EF;
+  --color-brand-bg-skeleton-1: #EAE6DF;
+  --color-brand-bg-skeleton-2: #DDD9D0;
+  --color-brand-red: #DC2626;
 }
 
 :root {

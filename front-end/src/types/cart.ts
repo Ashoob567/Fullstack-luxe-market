@@ -19,6 +19,7 @@ export interface CartItem {
   quantity: number;
   size: string;                      // allow_blank → "" agar no size
   color: string;                     // allow_blank → "" agar no color
+  slug?: string;                     // Product slug for navigation (optional for backward compatibility)
 }
 
 // ----------------------------------------------------------

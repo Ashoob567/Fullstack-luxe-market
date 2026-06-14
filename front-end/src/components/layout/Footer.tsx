@@ -6,32 +6,12 @@ import Link from "next/link";
 
 // ── Injected CSS (keeps component a pure Server Component) ────────────────────
 const footerStyles = `
-  .lm-social-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 2.25rem;
-    height: 2.25rem;
-    border-radius: 9999px;
-    border: 1px solid rgba(201, 168, 76, 0.35);
-    color: #C9A84C;
-    transition: background-color 0.2s ease, color 0.2s ease;
-  }
   .lm-social-btn:hover {
     background-color: #C9A84C;
     color: #1B3A5C;
   }
-  .lm-footer-link {
-    color: #A8BDD1;
-    font-size: 0.875rem;
-    transition: color 0.15s ease;
-  }
   .lm-footer-link:hover {
     color: #ffffff;
-  }
-  .lm-contact-link {
-    color: inherit;
-    transition: color 0.15s ease;
   }
   .lm-contact-link:hover {
     color: #ffffff;
@@ -142,8 +122,7 @@ export default function Footer() {
 
   return (
     <footer
-      style={{ backgroundColor: "#1B3A5C" }}
-      className="text-white"
+      className="bg-brand-blue text-white"
       aria-label="Site footer"
     >
       {/* Inject CSS — zero JS event handlers in this component */}
@@ -167,11 +146,9 @@ export default function Footer() {
             <Link href="/" className="inline-flex items-center gap-2 mb-4">
               <span className="text-2xl leading-none select-none">⌚</span>
               <span
-                className="text-xl font-semibold uppercase"
+                className="text-xl font-semibold uppercase text-brand-text-gold-light tracking-[0.18em]"
                 style={{
                   fontFamily: "'Cormorant Garamond', 'Garamond', Georgia, serif",
-                  letterSpacing: "0.18em",
-                  color: "#E8C97A",
                 }}
               >
                 Luxe Market
@@ -179,11 +156,9 @@ export default function Footer() {
             </Link>
 
             <p
-              className="text-sm leading-relaxed mb-6 max-w-xs"
+              className="text-sm leading-relaxed mb-6 max-w-xs text-brand-text-secondary italic"
               style={{
-                color: "#A8BDD1",
                 fontFamily: "Georgia, 'Times New Roman', serif",
-                fontStyle: "italic",
               }}
             >
               Curated luxury at your fingertips — premium watches &amp; refined
@@ -199,7 +174,7 @@ export default function Footer() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={label}
-                  className="lm-social-btn"
+                  className="lm-social-btn flex items-center justify-center w-9 h-9 rounded-full border border-brand-gold/35 text-brand-gold transition-[background-color,color] duration-200 ease-[ease]"
                 >
                   {icon}
                 </a>
@@ -210,15 +185,14 @@ export default function Footer() {
           {/* Col 2 · Quick Links */}
           <div>
             <h3
-              className="text-xs font-semibold uppercase mb-5"
-              style={{ color: "#E8C97A", letterSpacing: "0.2em" }}
+              className="text-xs font-semibold uppercase mb-5 text-brand-text-gold-light tracking-[0.2em]"
             >
               Quick Links
             </h3>
             <ul className="space-y-3">
               {quickLinks.map(({ label, href }) => (
                 <li key={label}>
-                  <Link href={href} className="lm-footer-link">
+                  <Link href={href} className="lm-footer-link text-brand-text-secondary text-sm transition-colors duration-150 ease-[ease]">
                     {label}
                   </Link>
                 </li>
@@ -229,15 +203,14 @@ export default function Footer() {
           {/* Col 3 · Customer Service */}
           <div>
             <h3
-              className="text-xs font-semibold uppercase mb-5"
-              style={{ color: "#E8C97A", letterSpacing: "0.2em" }}
+              className="text-xs font-semibold uppercase mb-5 text-brand-text-gold-light tracking-[0.2em]"
             >
               Customer Service
             </h3>
             <ul className="space-y-3">
               {customerServiceLinks.map(({ label, href }) => (
                 <li key={label}>
-                  <Link href={href} className="lm-footer-link">
+                  <Link href={href} className="lm-footer-link text-brand-text-secondary text-sm transition-colors duration-150 ease-[ease]">
                     {label}
                   </Link>
                 </li>
@@ -248,17 +221,16 @@ export default function Footer() {
           {/* Col 4 · Contact Info */}
           <div>
             <h3
-              className="text-xs font-semibold uppercase mb-5"
-              style={{ color: "#E8C97A", letterSpacing: "0.2em" }}
+              className="text-xs font-semibold uppercase mb-5 text-brand-text-gold-light tracking-[0.2em]"
             >
               Get In Touch
             </h3>
             <ul className="space-y-4">
               <li className="flex items-start gap-2.5">
-                <span className="mt-0.5 flex-shrink-0" style={{ color: "#C9A84C" }}>
+                <span className="mt-0.5 flex-shrink-0 text-brand-gold">
                   <MapPinIcon />
                 </span>
-                <span className="text-sm leading-snug" style={{ color: "#A8BDD1" }}>
+                <span className="text-sm leading-snug text-brand-text-secondary">
                   Liberty Market, Gulberg III
                   <br />
                   Lahore, Pakistan
@@ -266,15 +238,15 @@ export default function Footer() {
               </li>
 
               <li className="flex items-start gap-2.5">
-                <span className="mt-0.5 flex-shrink-0" style={{ color: "#C9A84C" }}>
+                <span className="mt-0.5 flex-shrink-0 text-brand-gold">
                   <PhoneIcon />
                 </span>
-                <span className="text-sm leading-snug" style={{ color: "#A8BDD1" }}>
+                <span className="text-sm leading-snug text-brand-text-secondary">
                   <a
                     href="https://wa.me/923001234567"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="lm-contact-link"
+                    className="lm-contact-link transition-colors duration-150 ease-[ease]"
                   >
                     +92 300 123 4567
                   </a>
@@ -282,21 +254,21 @@ export default function Footer() {
               </li>
 
               <li className="flex items-start gap-2.5">
-                <span className="mt-0.5 flex-shrink-0" style={{ color: "#C9A84C" }}>
+                <span className="mt-0.5 flex-shrink-0 text-brand-gold">
                   <MailIcon />
                 </span>
-                <span className="text-sm leading-snug" style={{ color: "#A8BDD1" }}>
-                  <a href="mailto:hello@luxemarket.pk" className="lm-contact-link">
+                <span className="text-sm leading-snug text-brand-text-secondary">
+                  <a href="mailto:hello@luxemarket.pk" className="lm-contact-link transition-colors duration-150 ease-[ease]">
                     hello@luxemarket.pk
                   </a>
                 </span>
               </li>
 
               <li className="flex items-start gap-2.5">
-                <span className="mt-0.5 flex-shrink-0" style={{ color: "#C9A84C" }}>
+                <span className="mt-0.5 flex-shrink-0 text-brand-gold">
                   <ClockIcon />
                 </span>
-                <span className="text-sm leading-snug" style={{ color: "#A8BDD1" }}>
+                <span className="text-sm leading-snug text-brand-text-secondary">
                   Mon – Sat: 10 am – 8 pm
                   <br />
                   Sun: 12 pm – 6 pm (PKT)
@@ -313,14 +285,13 @@ export default function Footer() {
       {/* ── Bottom bar ── */}
       <div className="max-w-7xl mx-auto px-6 py-5">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-xs text-center sm:text-left" style={{ color: "#6B8FAF" }}>
+          <p className="text-xs text-center sm:text-left text-brand-text-muted">
             © {currentYear} Luxe Market. All rights reserved. Made with ♥ in Pakistan.
           </p>
 
           <div className="flex items-center gap-2 flex-wrap justify-center">
             <span
-              className="flex items-center gap-1 text-xs"
-              style={{ color: "#6B8FAF" }}
+              className="flex items-center gap-1 text-xs text-brand-text-muted"
             >
               <ShieldCheckIcon />
               Secure Payments:
@@ -328,13 +299,7 @@ export default function Footer() {
             {paymentBadges.map((badge) => (
               <span
                 key={badge}
-                className="px-2 py-0.5 rounded font-medium"
-                style={{
-                  border: "1px solid rgba(201,168,76,0.3)",
-                  color: "#C9A84C",
-                  fontSize: "0.65rem",
-                  letterSpacing: "0.05em",
-                }}
+                className="px-2 py-0.5 rounded font-medium border border-brand-gold/30 text-brand-gold text-[0.65rem] tracking-[0.05em]"
               >
                 {badge}
               </span>

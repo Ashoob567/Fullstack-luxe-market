@@ -16,14 +16,6 @@ import type { CartItem } from '@/types';
 import { useCartStore } from '@/store/cartStore';
 import { useWishlistStore } from '@/hooks/useWishlistStore';
 
-const BRAND_COLORS = {
-  darkBg: '#2A2D3A',
-  accentBlue: '#5B6EF5',
-  textLight: '#E8E9F0',
-  textMuted: '#A0A3B8',
-  red: '#EF4444',
-} as const;
-
 interface ProductCardV2Props {
   product: ProductList;
   priority?: boolean;
@@ -138,6 +130,7 @@ export function ProductCardV2({ product, priority = false }: ProductCardV2Props)
         size: selectedSize.size_name,
         color: selectedColor.color_name,
         quantity: 1,
+        slug: product.slug,
       };
 
       addItem(cartItem);
@@ -151,31 +144,29 @@ export function ProductCardV2({ product, priority = false }: ProductCardV2Props)
   };
 
   const handleBuyNow = () => {
-    // If product has variants, require selection
-    if (hasVariants) {
-      if (!selectedSize || !selectedColor) {
-        toast.info('Please select a size');
-        return;
-      }
+    // Add to cart with first available variant, then open cart drawer
+    if (hasVariants && selectedColor && availableSizes.length > 0) {
+      const firstSize = availableSizes[0];
 
       const cartItem: Omit<CartItem, 'cart_item_id'> = {
         product_id: product.id,
-        variant_id: selectedSize.id,
+        variant_id: firstSize.id,
         name: product.name,
         image: displayImage,
-        price: selectedSize.final_price,
-        size: selectedSize.size_name,
+        price: firstSize.final_price,
+        size: firstSize.size_name,
         color: selectedColor.color_name,
         quantity: 1,
+        slug: product.slug,
       };
 
       addItem(cartItem);
-      router.push('/checkout');
-      return;
+      toast.success('Added to cart! You can adjust size/color in cart.');
+      openDrawer();
+    } else {
+      // No variants available - navigate to product page
+      router.push(`/products/${product.slug}`);
     }
-
-    // Simple product without variants
-    toast.info('This product is currently unavailable');
   };
 
   // If no color variants available, show simplified card without size/color selection
@@ -183,8 +174,7 @@ export function ProductCardV2({ product, priority = false }: ProductCardV2Props)
 
   return (
     <Card
-      className="group relative overflow-hidden rounded-2xl border-0 transition-all hover:shadow-2xl hover:-translate-y-1"
-      style={{ backgroundColor: BRAND_COLORS.darkBg }}
+      className="group relative overflow-hidden rounded-2xl border-0 bg-brand-dark transition-all hover:shadow-2xl hover:-translate-y-1"
     >
       {/* Image Section */}
       <div className="relative aspect-square overflow-hidden rounded-t-2xl bg-gradient-to-br from-gray-700 to-gray-800">
@@ -201,20 +191,14 @@ export function ProductCardV2({ product, priority = false }: ProductCardV2Props)
         <div className="absolute top-3 left-3 flex flex-col gap-2">
           {/* Flash Sale Badge (Highest Priority) */}
           {product.is_flash_active && (
-            <div
-              className="px-3 py-1 rounded-full text-xs font-bold text-white uppercase animate-pulse"
-              style={{ backgroundColor: '#DC2626' }}
-            >
+            <div className="px-3 py-1 rounded-full text-xs font-bold text-white uppercase animate-pulse bg-brand-red">
               ⚡ FLASH SALE
             </div>
           )}
 
           {/* Discount Badge */}
           {discountPercentage > 0 && !product.is_flash_active && (
-            <div
-              className="px-3 py-1 rounded-full text-xs font-bold text-white"
-              style={{ backgroundColor: BRAND_COLORS.accentBlue }}
-            >
+            <div className="px-3 py-1 rounded-full text-xs font-bold text-white bg-brand-blue-light">
               {discountPercentage}% OFF
             </div>
           )}
@@ -225,18 +209,14 @@ export function ProductCardV2({ product, priority = false }: ProductCardV2Props)
               {product.tags.map((tag) => (
                 <div
                   key={tag.id}
-                  className="px-3 py-1 rounded-full text-xs font-bold text-white uppercase"
-                  style={{
-                    backgroundColor: tag.slug === 'new-arrival'
-                      ? '#10B981' // Green for NEW ARRIVAL
-                      : tag.slug === 'sale'
-                      ? '#EF4444' // Red for SALE
-                      : tag.slug === 'trending'
-                      ? '#F59E0B' // Orange for TRENDING
-                      : tag.slug === 'limited-edition'
-                      ? '#8B5CF6' // Purple for LIMITED EDITION
-                      : BRAND_COLORS.accentBlue // Default blue
-                  }}
+                  className={cn(
+                    "px-3 py-1 rounded-full text-xs font-bold text-white uppercase",
+                    tag.slug === 'new-arrival' && 'bg-green-500',
+                    tag.slug === 'sale' && 'bg-red-500',
+                    tag.slug === 'trending' && 'bg-orange-500',
+                    tag.slug === 'limited-edition' && 'bg-purple-500',
+                    !['new-arrival', 'sale', 'trending', 'limited-edition'].includes(tag.slug) && 'bg-brand-blue-light'
+                  )}
                 >
                   {tag.name}
                 </div>
@@ -254,8 +234,7 @@ export function ProductCardV2({ product, priority = false }: ProductCardV2Props)
         >
           <Heart
             size={16}
-            fill={wishlisted ? BRAND_COLORS.red : 'none'}
-            stroke={wishlisted ? BRAND_COLORS.red : '#9C9488'}
+            className={wishlisted ? 'fill-brand-red stroke-brand-red' : 'fill-none stroke-gray-400'}
             strokeWidth={2}
           />
         </button>
@@ -264,24 +243,18 @@ export function ProductCardV2({ product, priority = false }: ProductCardV2Props)
       {/* Content Section */}
       <div className="p-4 space-y-3">
         {/* Category */}
-        <p
-          className="text-[10px] uppercase tracking-widest font-semibold"
-          style={{ color: BRAND_COLORS.textMuted }}
-        >
+        <p className="text-[10px] uppercase tracking-widest font-semibold text-brand-text-muted">
           {product.category_name || 'UNCATEGORIZED'}
         </p>
 
         {/* Product Name */}
-        <h3
-          className="text-base font-semibold line-clamp-2 leading-tight"
-          style={{ color: BRAND_COLORS.textLight }}
-        >
+        <h3 className="text-base font-semibold line-clamp-2 leading-tight text-brand-text-light">
           {product.name}
         </h3>
 
         {/* Subtitle */}
         {product.description && (
-          <p className="text-xs line-clamp-1" style={{ color: BRAND_COLORS.textMuted }}>
+          <p className="text-xs line-clamp-1 text-brand-text-muted">
             {product.description}
           </p>
         )}
@@ -292,9 +265,12 @@ export function ProductCardV2({ product, priority = false }: ProductCardV2Props)
             {[...Array(5)].map((_, i) => (
               <svg
                 key={i}
-                className="w-3 h-3"
-                fill={i < Math.round(product.average_rating || 0) ? '#FDCB6E' : 'none'}
-                stroke={i < Math.round(product.average_rating || 0) ? '#FDCB6E' : BRAND_COLORS.textMuted}
+                className={cn(
+                  "w-3 h-3",
+                  i < Math.round(product.average_rating || 0)
+                    ? "fill-yellow-400 stroke-yellow-400"
+                    : "fill-none stroke-brand-text-muted"
+                )}
                 strokeWidth={1.5}
                 viewBox="0 0 24 24"
               >
@@ -302,22 +278,22 @@ export function ProductCardV2({ product, priority = false }: ProductCardV2Props)
               </svg>
             ))}
           </div>
-          <span className="text-[11px] font-semibold" style={{ color: BRAND_COLORS.textLight }}>
+          <span className="text-[11px] font-semibold text-brand-text-light">
             {product.average_rating?.toFixed(1) || '0.0'}
           </span>
-          <span className="text-[10px]" style={{ color: BRAND_COLORS.textMuted }}>
+          <span className="text-[10px] text-brand-text-muted">
             ({product.review_count || 0} reviews)
           </span>
         </div>
 
         {/* Price */}
         <div className="flex items-baseline gap-2">
-          <span className="text-2xl font-bold" style={{ color: BRAND_COLORS.textLight }}>
+          <span className="text-2xl font-bold text-brand-text-light">
             Rs. {displayPrice.toLocaleString()}
           </span>
           {originalPrice && (
             <>
-              <span className="text-sm line-through" style={{ color: BRAND_COLORS.textMuted }}>
+              <span className="text-sm line-through text-brand-text-muted">
                 Rs. {originalPrice.toLocaleString()}
               </span>
               <span className="text-xs font-semibold text-green-400">Save {discountPercentage}%</span>
@@ -328,7 +304,7 @@ export function ProductCardV2({ product, priority = false }: ProductCardV2Props)
         {/* Size Selection - Only show if product has variants */}
         {hasVariants && availableSizes.length > 0 && (
           <div className="space-y-2">
-            <p className="text-xs font-semibold" style={{ color: BRAND_COLORS.textMuted }}>
+            <p className="text-xs font-semibold text-brand-text-muted">
               SIZE
             </p>
             <div className="flex flex-wrap gap-2">
@@ -339,13 +315,9 @@ export function ProductCardV2({ product, priority = false }: ProductCardV2Props)
                   className={cn(
                     'px-3 py-1.5 rounded-lg text-xs font-medium transition-all border',
                     selectedSizeId === sizeVariant.id
-                      ? 'text-white border-transparent'
-                      : 'border-gray-600 hover:border-gray-500'
+                      ? 'bg-brand-blue-light text-white border-transparent'
+                      : 'bg-transparent text-brand-text-light border-gray-600 hover:border-gray-500'
                   )}
-                  style={{
-                    backgroundColor: selectedSizeId === sizeVariant.id ? BRAND_COLORS.accentBlue : 'transparent',
-                    color: selectedSizeId === sizeVariant.id ? '#fff' : BRAND_COLORS.textLight,
-                  }}
                 >
                   {sizeVariant.size_name}
                 </button>
@@ -358,11 +330,11 @@ export function ProductCardV2({ product, priority = false }: ProductCardV2Props)
         {hasVariants && availableColors.length > 1 && (
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <p className="text-xs font-semibold" style={{ color: BRAND_COLORS.textMuted }}>
+              <p className="text-xs font-semibold text-brand-text-muted">
                 COLOR
               </p>
               {selectedColor && (
-                <p className="text-xs" style={{ color: BRAND_COLORS.textLight }}>
+                <p className="text-xs text-brand-text-light">
                   Selected: <span className="font-semibold">{selectedColor.color_name}</span>
                 </p>
               )}
@@ -402,33 +374,13 @@ export function ProductCardV2({ product, priority = false }: ProductCardV2Props)
         )}
 
         {/* Product Status or Buy Button */}
-        {!hasVariants ? (
-          <div className="space-y-2">
-            <div
-              className="w-full rounded-xl py-4 px-4 text-center text-sm font-semibold border-2"
-              style={{
-                borderColor: BRAND_COLORS.textMuted,
-                backgroundColor: 'rgba(160, 163, 184, 0.1)',
-                color: BRAND_COLORS.textMuted,
-              }}
-            >
-              Currently Unavailable
-            </div>
-            <p className="text-xs text-center" style={{ color: BRAND_COLORS.textMuted }}>
-              This product needs size/color variants to be added
-            </p>
-          </div>
-        ) : (
-          <Button
-            onClick={handleBuyNow}
-            disabled={!selectedSize}
-            className="w-full rounded-xl py-6 text-sm font-semibold text-white transition-all hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-            style={{ backgroundColor: BRAND_COLORS.accentBlue }}
-          >
-            Buy Now — Rs. {displayPrice.toLocaleString()}
-            <ArrowRight size={16} className="ml-2" />
-          </Button>
-        )}
+        <Button
+          onClick={handleBuyNow}
+          className="w-full rounded-xl py-6 text-sm font-semibold text-white bg-brand-blue-light transition-all hover:shadow-lg"
+        >
+          Buy Now — Rs. {displayPrice.toLocaleString()}
+          <ArrowRight size={16} className="ml-2" />
+        </Button>
       </div>
     </Card>
   );

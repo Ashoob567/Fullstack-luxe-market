@@ -128,24 +128,17 @@ export default function HeroBanner() {
                 {/* Copy block — bottom-1/3, left-aligned */}
                 <div className="absolute bottom-1/3 left-10 md:left-20 z-10 max-w-sm md:max-w-lg">
                   {/* Eyebrow - NO ANIMATION for faster LCP */}
-                  <span
-                    className="block mb-4 text-xs tracking-[0.3em] uppercase"
-                    style={{ color: "#C9A84C" }}
-                  >
+                  <span className="block mb-4 text-xs tracking-[0.3em] uppercase text-brand-gold">
                     Luxe Market
                   </span>
 
                   {/* Gold underline accent - NO ANIMATION for faster LCP */}
-                  <div
-                    className="mb-4 h-px w-12"
-                    style={{ backgroundColor: "#C9A84C" }}
-                  />
+                  <div className="mb-4 h-px w-12 bg-brand-gold" />
 
                   {/* ✅ CRITICAL LCP ELEMENT - NO ANIMATION for instant render */}
                   <h2
-                    className="font-bold text-5xl md:text-7xl leading-[1.05] whitespace-pre-line mb-2"
+                    className="font-bold text-5xl md:text-7xl leading-[1.05] whitespace-pre-line mb-2 text-brand-text-light"
                     style={{
-                      color: "#F5F0E8",
                       fontFamily: "var(--font-serif), Georgia, serif",
                       textShadow: "0 2px 40px rgba(0,0,0,0.4)",
                     }}
@@ -159,8 +152,8 @@ export default function HeroBanner() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3, delay: 0.2 }} // ⚡ Reduced
-                    className="text-sm mt-4 mb-8 leading-relaxed"
-                    style={{ color: "#B5A98A", fontFamily: "var(--font-dm), sans-serif" }}
+                    className="text-sm mt-4 mb-8 leading-relaxed text-brand-text-gold-muted"
+                    style={{ fontFamily: "var(--font-dm), sans-serif" }}
                   >
                     {slide.subtext}
                   </motion.p>
@@ -174,13 +167,9 @@ export default function HeroBanner() {
                     className="flex items-center gap-4"
                   >
                     <Button
-                      className="rounded-sm px-8 py-3 font-medium text-sm transition-all duration-200 hover:scale-[1.02] hover:shadow-[0_0_20px_rgba(201,168,76,0.4)]"
+                      className="rounded-sm px-8 py-3 font-medium text-sm transition-all duration-200 hover:scale-[1.02] hover:shadow-[0_0_20px_rgba(201,168,76,0.4)] bg-brand-gold text-brand-dark border-none tracking-wider"
                       style={{
-                        backgroundColor: "#C9A84C",
-                        color: "#0a0a0a",
-                        border: "none",
                         fontFamily: "var(--font-dm), sans-serif",
-                        letterSpacing: "0.05em",
                       }}
                     >
                       <Link href={slide.ctaHref}>{slide.ctaLabel}</Link>
@@ -188,8 +177,8 @@ export default function HeroBanner() {
 
                     <Link
                       href="/products"
-                      className="text-sm font-medium tracking-wide transition-colors duration-200 flex items-center gap-2 group"
-                      style={{ color: "#F5F0E8", fontFamily: "var(--font-dm), sans-serif" }}
+                      className="text-sm font-medium tracking-wide transition-colors duration-200 flex items-center gap-2 group text-brand-text-light"
+                      style={{ fontFamily: "var(--font-dm), sans-serif" }}
                     >
                       View All
                       <span className="group-hover:translate-x-1 transition-transform duration-200">→</span>
@@ -209,17 +198,13 @@ export default function HeroBanner() {
               <button
                 key={i}
                 onClick={() => api?.scrollTo(i)}
-                className="transition-all duration-300"
+                className="transition-all duration-300 h-1.5 rounded-[3px] border-none cursor-pointer"
                 style={{
                   width: i === current ? "24px" : "6px",
-                  height: "6px",
-                  borderRadius: "3px",
                   backgroundColor:
                     i === current
                       ? "#C9A84C"
                       : "rgba(201,168,76,0.3)",
-                  border: "none",
-                  cursor: "pointer",
                 }}
               />
             ))}
@@ -229,14 +214,10 @@ export default function HeroBanner() {
           <button
             aria-label="Previous slide"
             onClick={() => api?.scrollPrev()}
-            className="flex items-center justify-center w-9 h-9 rounded-full transition-all duration-200"
+            className="flex items-center justify-center w-9 h-9 rounded-full transition-all duration-200 text-brand-gold cursor-pointer backdrop-blur-md"
             style={{
               backgroundColor: "rgba(201,168,76,0.15)",
-              backdropFilter: "blur(6px)",
-              WebkitBackdropFilter: "blur(6px)",
               border: "1px solid rgba(201,168,76,0.3)",
-              color: "#C9A84C",
-              cursor: "pointer",
             }}
             onMouseEnter={(e) => {
               (e.currentTarget as HTMLButtonElement).style.backgroundColor =
@@ -254,14 +235,10 @@ export default function HeroBanner() {
           <button
             aria-label="Next slide"
             onClick={() => api?.scrollNext()}
-            className="flex items-center justify-center w-9 h-9 rounded-full transition-all duration-200"
+            className="flex items-center justify-center w-9 h-9 rounded-full transition-all duration-200 text-brand-gold cursor-pointer backdrop-blur-md"
             style={{
               backgroundColor: "rgba(201,168,76,0.15)",
-              backdropFilter: "blur(6px)",
-              WebkitBackdropFilter: "blur(6px)",
               border: "1px solid rgba(201,168,76,0.3)",
-              color: "#C9A84C",
-              cursor: "pointer",
             }}
             onMouseEnter={(e) => {
               (e.currentTarget as HTMLButtonElement).style.backgroundColor =

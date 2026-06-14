@@ -50,28 +50,21 @@ function TimerBox({ value, label }: TimerBoxProps) {
 
   return (
     <div
-      className="flex min-w-[72px] flex-col items-center rounded-sm px-5 py-4"
-      style={{
-        background: "rgba(0,0,0,0.35)",
-        border: "1px solid rgba(201,168,76,0.3)",
-        backdropFilter: "blur(4px)",
-      }}
+      className="flex min-w-[72px] flex-col items-center rounded-sm border border-brand-gold/30 bg-black/35 px-5 py-4 backdrop-blur-sm"
     >
       <span
-        className={`block text-4xl font-bold leading-none transition-all duration-200 ${
+        className={`block text-4xl font-bold leading-none text-brand-text-light transition-all duration-200 ${
           animate ? "scale-90 opacity-60" : "scale-100 opacity-100"
         }`}
         style={{
-          color: "#F5F0E8",
           fontFamily: "'Playfair Display', Georgia, serif",
         }}
       >
         {value}
       </span>
       <span
-        className="mt-2 text-[10px] uppercase tracking-[0.22em]"
+        className="mt-2 text-[10px] uppercase tracking-[0.22em] text-brand-gold"
         style={{
-          color: "#C9A84C",
           fontFamily: "'DM Sans', sans-serif",
         }}
       >
@@ -129,8 +122,7 @@ export default function FlashSaleTimer({
       initial={{ opacity: 0, y: 40 }}
       animate={isInView ? { opacity: 1, y: 0 } : {}}
       transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-      className="relative overflow-hidden px-4 py-16"
-      style={{ backgroundColor: "#0a0a0a" }}
+      className="relative overflow-hidden bg-brand-dark px-4 py-16"
     >
       {/* Gold top/bottom borders */}
       <div
@@ -160,17 +152,16 @@ export default function FlashSaleTimer({
       <div className="relative z-10 mx-auto max-w-4xl text-center">
         {/* Eyebrow */}
         <p
-          className="mb-3 text-[11px] uppercase tracking-[0.3em]"
-          style={{ color: "#C9A84C", fontFamily: "'DM Sans', sans-serif" }}
+          className="mb-3 text-[11px] uppercase tracking-[0.3em] text-brand-gold"
+          style={{ fontFamily: "'DM Sans', sans-serif" }}
         >
           Limited Time Offer
         </p>
 
         {/* Title */}
         <h2
-          className="mb-2 text-4xl font-bold md:text-5xl"
+          className="mb-2 text-4xl font-bold text-brand-text-light md:text-5xl"
           style={{
-            color: "#F5F0E8",
             fontFamily: "'Playfair Display', Georgia, serif",
           }}
         >
@@ -178,15 +169,12 @@ export default function FlashSaleTimer({
         </h2>
 
         {/* Gold underline */}
-        <div
-          className="mx-auto mt-3 mb-4 h-px w-16"
-          style={{ backgroundColor: "#C9A84C" }}
-        />
+        <div className="mx-auto mt-3 mb-4 h-px w-16 bg-brand-gold" />
 
         {/* Subtitle */}
         <p
-          className="mb-10 text-sm italic md:text-base"
-          style={{ color: "#A8BDD1", fontFamily: "'DM Sans', sans-serif" }}
+          className="mb-10 text-sm italic text-brand-text-secondary md:text-base"
+          style={{ fontFamily: "'DM Sans', sans-serif" }}
         >
           {subtitle}
         </p>
@@ -194,21 +182,16 @@ export default function FlashSaleTimer({
         {/* Ended */}
         {ended ? (
           <div
-            className="inline-block rounded-sm px-8 py-6"
-            style={{
-              border: "1px solid rgba(201,168,76,0.3)",
-              backgroundColor: "rgba(201,168,76,0.05)",
-            }}
+            className="inline-block rounded-sm border border-brand-gold/30 bg-brand-gold/5 px-8 py-6"
           >
             <p
-              className="text-3xl font-bold"
-              style={{ color: "#F5F0E8", fontFamily: "'Playfair Display', Georgia, serif" }}
+              className="text-3xl font-bold text-brand-text-light"
+              style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
             >
               Sale Ended
             </p>
             <p
-              className="mt-2 text-xs uppercase tracking-[0.18em]"
-              style={{ color: "#C9A84C" }}
+              className="mt-2 text-xs uppercase tracking-[0.18em] text-brand-gold"
             >
               Thank you for shopping
             </p>
@@ -223,8 +206,7 @@ export default function FlashSaleTimer({
                   {i < segments.length - 1 && (
                     <span
                       aria-hidden
-                      className="hidden self-center pb-5 text-3xl font-bold md:block"
-                      style={{ color: "#C9A84C" }}
+                      className="hidden self-center pb-5 text-3xl font-bold text-brand-gold md:block"
                     >
                       :
                     </span>
@@ -237,10 +219,8 @@ export default function FlashSaleTimer({
             <div className="mt-10">
               <Link
                 href={href}
-                className="inline-block rounded-sm px-10 py-3.5 text-sm font-semibold tracking-wide transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_0_24px_rgba(201,168,76,0.4)]"
+                className="inline-block rounded-sm bg-brand-gold px-10 py-3.5 text-sm font-semibold text-brand-dark tracking-wide transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_0_24px_rgba(201,168,76,0.4)]"
                 style={{
-                  backgroundColor: "#C9A84C",
-                  color: "#0a0a0a",
                   fontFamily: "'DM Sans', sans-serif",
                   letterSpacing: "0.08em",
                 }}

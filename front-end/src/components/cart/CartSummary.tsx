@@ -49,17 +49,9 @@ export function CartSummary() {
   }
 
   return (
-    <div
-      style={{
-        borderTop: "1px solid #E8E0D5",
-        paddingTop: "16px",
-        display: "flex",
-        flexDirection: "column",
-        gap: "12px",
-      }}
-    >
+    <div className="border-t border-[#E8E0D5] pt-4 flex flex-col gap-3">
       {/* Coupon row */}
-      <div style={{ display: "flex", gap: "8px" }}>
+      <div className="flex gap-2">
         <input
           type="text"
           value={couponCode}
@@ -67,49 +59,13 @@ export function CartSummary() {
           onKeyDown={(e) => e.key === "Enter" && handleApplyCoupon()}
           placeholder="Enter coupon code"
           disabled={applying}
-          style={{
-            flex: 1,
-            border: "1.5px solid #E8E0D5",
-            borderRadius: "8px",
-            padding: "10px 14px",
-            fontFamily: "'DM Sans', sans-serif",
-            fontWeight: 400,
-            fontSize: "0.875rem",
-            color: "#3D2F1F",
-            background: "#FAF8F4",
-            outline: "none",
-            transition: "border-color 0.2s ease",
-            // placeholder color applied via CSS class below
-          }}
-          className="luxe-coupon-input"
-          onFocus={(e) => (e.currentTarget.style.borderColor = "#3D2F1F")}
-          onBlur={(e) => (e.currentTarget.style.borderColor = "#E8E0D5")}
+          className="flex-1 border-[1.5px] border-[#E8E0D5] rounded-lg px-3.5 py-2.5 font-['DM_Sans',sans-serif] font-normal text-sm text-[#3D2F1F] bg-brand-bg-light outline-none transition-[border-color] duration-200 ease-[ease] focus:border-[#3D2F1F] luxe-coupon-input"
         />
 
         <button
           onClick={handleApplyCoupon}
           disabled={applying || !couponCode.trim()}
-          style={{
-            background: "#3D2F1F",
-            color: "#FAF8F4",
-            border: "none",
-            borderRadius: "8px",
-            padding: "10px 18px",
-            fontFamily: "'DM Sans', sans-serif",
-            fontWeight: 600,
-            fontSize: "0.8rem",
-            cursor: applying || !couponCode.trim() ? "not-allowed" : "pointer",
-            opacity: applying || !couponCode.trim() ? 0.4 : 1,
-            transition: "all 0.2s ease",
-            whiteSpace: "nowrap",
-          }}
-          onMouseEnter={(e) => {
-            if (!applying && couponCode.trim())
-              (e.currentTarget as HTMLButtonElement).style.background = "#1A1A1A";
-          }}
-          onMouseLeave={(e) => {
-            (e.currentTarget as HTMLButtonElement).style.background = "#3D2F1F";
-          }}
+          className="bg-[#3D2F1F] text-brand-bg-light border-none rounded-lg px-4.5 py-2.5 font-['DM_Sans',sans-serif] font-semibold text-[0.8rem] cursor-pointer transition-all duration-200 ease-[ease] whitespace-nowrap disabled:cursor-not-allowed disabled:opacity-40 hover:bg-[#1A1A1A] hover:disabled:bg-[#3D2F1F]"
         >
           {applying ? "Applying…" : "Apply"}
         </button>
@@ -136,33 +92,11 @@ export function CartSummary() {
       />
 
       {/* Total */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          borderTop: "1px solid #E8E0D5",
-          paddingTop: "12px",
-          marginTop: "4px",
-        }}
-      >
-        <span
-          style={{
-            fontFamily: "'DM Sans', sans-serif",
-            fontWeight: 700,
-            fontSize: "1rem",
-            color: "#3D2F1F",
-          }}
-        >
+      <div className="flex justify-between border-t border-[#E8E0D5] pt-3 mt-1">
+        <span className="font-['DM_Sans',sans-serif] font-bold text-base text-[#3D2F1F]">
           Total
         </span>
-        <span
-          style={{
-            fontFamily: "'DM Sans', sans-serif",
-            fontWeight: 700,
-            fontSize: "1rem",
-            color: "#3D2F1F",
-          }}
-        >
+        <span className="font-['DM_Sans',sans-serif] font-bold text-base text-[#3D2F1F]">
           {formatPrice(total)}
         </span>
       </div>
@@ -185,26 +119,16 @@ interface SummaryRowProps {
 
 function SummaryRow({ label, value, labelStyle, valueStyle }: SummaryRowProps) {
   return (
-    <div style={{ display: "flex", justifyContent: "space-between" }}>
+    <div className="flex justify-between">
       <span
-        style={{
-          fontFamily: "'DM Sans', sans-serif",
-          fontWeight: 400,
-          fontSize: "0.875rem",
-          color: "#5C4A32",
-          ...labelStyle,
-        }}
+        className="font-['DM_Sans',sans-serif] font-normal text-sm text-[#5C4A32]"
+        style={labelStyle}
       >
         {label}
       </span>
       <span
-        style={{
-          fontFamily: "'DM Sans', sans-serif",
-          fontWeight: 400,
-          fontSize: "0.875rem",
-          color: "#5C4A32",
-          ...valueStyle,
-        }}
+        className="font-['DM_Sans',sans-serif] font-normal text-sm text-[#5C4A32]"
+        style={valueStyle}
       >
         {value}
       </span>
