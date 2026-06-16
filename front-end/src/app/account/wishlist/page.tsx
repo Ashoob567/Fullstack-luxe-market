@@ -2,37 +2,44 @@
 
 import { useEffect, useState } from 'react';
 import { getWishlist } from '@/services/wishlistService';
-import { getProductDetail } from '@/services/productService';
 import { ProductCardV2 } from '@/components/products/ProductCardV2';
 import { EmptyState } from '@/components/common/EmptyState';
 import { useAuthStore } from '@/store/authStore';
 import { useWishlistStore } from '@/hooks/useWishlistStore';
 import { Heart } from 'lucide-react';
-import type { WishlistItem, ProductDetail } from '@/types';
+import type { WishlistItem, ProductList } from '@/types';
 
 export default function WishlistPage() {
   const [wishlistItems, setWishlistItems] = useState<WishlistItem[]>([]);
-  const [guestProducts, setGuestProducts] = useState<ProductDetail[]>([]);
+  const [guestProducts, setGuestProducts] = useState<ProductList[]>([]);
   const [loading, setLoading] = useState(true);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const guestItems = useWishlistStore((state) => state.guestItems);
 
   useEffect(() => {
     if (!isAuthenticated) {
-      // Guest mode - fetch full product data for each localStorage item
+      // Guest mode - fetch full product data using the list endpoint with ids filter
       setLoading(true);
       console.log('[WishlistPage] Guest mode - guestItems:', guestItems);
 
       const fetchGuestProducts = async () => {
         try {
           console.log('[WishlistPage] Fetching products for', guestItems.length, 'items');
-          const products = await Promise.all(
-            guestItems.map((item) => getProductDetail(item.slug))
-          );
-          console.log('[WishlistPage] Fetched products:', products);
-          setGuestProducts(products);
+
+          // Use the list endpoint with ids filter (comma-separated product IDs)
+          const ids = guestItems.map((item) => item.id).join(',');
+          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/products/?ids=${ids}`);
+
+          if (!response.ok) {
+            throw new Error(`Failed to fetch products: ${response.status}`);
+          }
+
+          const data = await response.json();
+          console.log('[WishlistPage] Fetched products:', data.results);
+          setGuestProducts(data.results || []);
         } catch (error) {
           console.error('Failed to fetch guest wishlist products:', error);
+          setGuestProducts([]);
         } finally {
           setLoading(false);
         }

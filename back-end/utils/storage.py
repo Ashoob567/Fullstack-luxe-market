@@ -112,6 +112,11 @@ class SupabaseStorage(Storage):
 
         URL encodes the path to handle spaces and special characters properly.
         """
+        # Validate that name is not empty
+        if not name or not name.strip():
+            logger.error("Cannot generate URL for empty file name")
+            return ""
+
         full_path = self._get_full_path(name)
         # Encode each path segment separately to preserve forward slashes
         encoded_path = '/'.join(quote(segment, safe='') for segment in full_path.split('/'))

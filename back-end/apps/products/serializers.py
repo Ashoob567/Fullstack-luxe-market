@@ -4,13 +4,10 @@ from rest_framework import serializers
 from .models import (
     Category,
     Product,
-    ProductImage,
     ProductTag,
-    ProductVariant,
     Review,
-    ProductVariantV2,  # NEW unified variant
-    ProductColorVariant,  # OLD nested structure
-    ProductSizeVariant,   # OLD nested structure
+    ProductColorVariant,
+    ProductSizeVariant,
 )
 
 
@@ -52,51 +49,10 @@ class ProductTagSerializer(serializers.ModelSerializer):
 
 
 # ==================================================
-# PRODUCT IMAGE
+# DEPRECATED SERIALIZERS - Removed
+# - ProductImageSerializer (use ProductColorVariant.image_url)
+# - ProductVariantSerializer (use ProductSizeVariantSerializer)
 # ==================================================
-
-class ProductImageSerializer(serializers.ModelSerializer):
-    url = serializers.SerializerMethodField()
-
-    class Meta:
-        model = ProductImage
-        fields = ["id", "image", "url", "alt_text", "color", "is_primary", "order"]
-
-    def get_url(self, obj):
-        if obj.image_url:
-            return obj.image_url
-        if obj.image:
-            try:
-                return obj.image.url
-            except Exception:
-                return None
-        return None
-
-
-# ==================================================
-# PRODUCT VARIANT
-# ==================================================
-
-class ProductVariantSerializer(serializers.ModelSerializer):
-    final_price = serializers.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        read_only=True,
-    )
-    is_in_stock = serializers.BooleanField(read_only=True)
-
-    class Meta:
-        model = ProductVariant
-        fields = [
-            "id",
-            "sku",
-            "size",
-            "color",
-            "stock_qty",
-            "price_modifier",
-            "final_price",
-            "is_in_stock",
-        ]
 
 
 # ==================================================
@@ -160,7 +116,13 @@ class EffectivePriceMixin:
 # PRODUCT LIST / CARD
 # ==================================================
 
+# ==================================================
+# DEPRECATED: ProductListSerializer (uses old ProductImage/ProductVariant)
+# Use ProductListSerializerNew instead
+# ==================================================
+'''
 class ProductListSerializer(EffectivePriceMixin, serializers.ModelSerializer):
+    """DEPRECATED: Use ProductListSerializerNew which uses ProductColorVariant structure"""
     primary_image = serializers.SerializerMethodField()
     images = serializers.SerializerMethodField()
     color_variants = serializers.SerializerMethodField()
@@ -233,67 +195,16 @@ class ProductListSerializer(EffectivePriceMixin, serializers.ModelSerializer):
         ]
 
     def get_primary_image(self, obj):
-        primary = obj.images.filter(is_primary=True).first()
-        if primary:
-            return primary.image_url or (primary.image.url if primary.image else None)
-        first = obj.images.first()
-        if first:
-            return first.image_url or (first.image.url if first.image else None)
+        # DEPRECATED: obj.images relation no longer exists
         return None
 
     def get_images(self, obj):
-        """Return all product images with their color associations"""
-        return ProductImageSerializer(obj.images.all(), many=True).data
+        # DEPRECATED: obj.images relation no longer exists
+        return []
 
     def get_color_variants(self, obj):
-        """
-        Group variants by color with their available sizes.
-        Returns a list of color objects with sizes and stock info.
-        Only includes colors that have stock available.
-        """
-        from collections import defaultdict
-
-        color_data = defaultdict(lambda: {
-            'sizes': [],
-            'in_stock': False
-        })
-
-        # Group variants by color
-        for variant in obj.variants.filter(stock_qty__gt=0):
-            color = variant.color or 'Default'
-            size = variant.size or 'Standard'
-
-            color_data[color]['sizes'].append({
-                'size': size,
-                'variant_id': str(variant.id),
-                'sku': variant.sku,
-                'stock_qty': variant.stock_qty,
-                'price_modifier': str(variant.price_modifier),
-                'final_price': str(variant.final_price),
-            })
-            color_data[color]['in_stock'] = True
-
-        # Format for frontend consumption
-        result = []
-        for color_name, data in color_data.items():
-            # Find matching image for this color
-            color_image = obj.images.filter(color__iexact=color_name).first()
-            if not color_image:
-                # Fallback to primary or first image
-                color_image = obj.images.filter(is_primary=True).first() or obj.images.first()
-
-            image_url = None
-            if color_image:
-                image_url = color_image.image_url or (color_image.image.url if color_image.image else None)
-
-            result.append({
-                'color': color_name,
-                'image_url': image_url,
-                'sizes': data['sizes'],
-                'in_stock': data['in_stock']
-            })
-
-        return result
+        # DEPRECATED: obj.variants relation no longer exists
+        return []
 
     def get_average_rating(self, obj):
         return getattr(obj, "average_rating", None)
@@ -302,17 +213,18 @@ class ProductListSerializer(EffectivePriceMixin, serializers.ModelSerializer):
         return getattr(obj, "review_count", 0)
 
     def get_is_in_stock(self, obj):
-        return obj.variants.filter(stock_qty__gt=0).exists()
+        # DEPRECATED: obj.variants relation no longer exists
+        return False
 
-
+'''
 # ==================================================
-# PRODUCT DETAIL
+# DEPRECATED: ProductDetailSerializer (uses old ProductImage/ProductVariant)
+# Frontend now uses ProductListSerializerNew for detail pages
 # ==================================================
 
 class ProductDetailSerializer(EffectivePriceMixin, serializers.ModelSerializer):
+    """DEPRECATED: Frontend uses ProductListSerializerNew which includes color_variants_new"""
     category = CategorySerializer(read_only=True)
-    images = ProductImageSerializer(many=True, read_only=True)
-    variants = ProductVariantSerializer(many=True, read_only=True)
     tags = ProductTagSerializer(many=True, read_only=True)
     reviews = ReviewSerializer(many=True, read_only=True)
 
@@ -371,15 +283,11 @@ class ProductDetailSerializer(EffectivePriceMixin, serializers.ModelSerializer):
         ]
 
     def get_is_in_stock(self, obj):
-        return obj.variants.filter(stock_qty__gt=0).exists()
+        # DEPRECATED: obj.variants relation no longer exists
+        return False
 
     def get_primary_image(self, obj):
-        primary = obj.images.filter(is_primary=True).first()
-        if primary:
-            return primary.image_url or (primary.image.url if primary.image else None)
-        first = obj.images.first()
-        if first:
-            return first.image_url or (first.image.url if first.image else None)
+        # DEPRECATED: obj.images relation no longer exists
         return None
 
     def get_average_rating(self, obj):
@@ -389,60 +297,19 @@ class ProductDetailSerializer(EffectivePriceMixin, serializers.ModelSerializer):
         return getattr(obj, "review_count", 0)
 
 # ==================================================
-# UNIFIED VARIANT SERIALIZER (NEW - Recommended!) ✨
-# Product → VariantV2 (color + size + image in one)
+# DEPRECATED: ProductVariantV2Serializer (denormalized structure)
+# Use ProductColorVariantSerializer + ProductSizeVariantSerializer
 # ==================================================
 
-class ProductVariantV2Serializer(serializers.ModelSerializer):
-    """
-    Serializer for unified variant structure.
-    Returns all variant data (color, size, image) in a flat structure.
-    """
-    is_in_stock = serializers.BooleanField(read_only=True)
-    final_price = serializers.SerializerMethodField()
-    image_url = serializers.SerializerMethodField()
 
-    class Meta:
-        model = ProductVariantV2
-        fields = [
-            'id',
-            'color_name',
-            'hex_primary',
-            'hex_light',
-            'hex_dark',
-            'image_url',
-            'size_name',
-            'sku',
-            'stock_quantity',
-            'price_adjustment',
-            'is_in_stock',
-            'final_price',
-            'display_order',
-        ]
-
-    def get_final_price(self, obj):
-        return str(obj.final_price)
-
-    def get_image_url(self, obj):
-        if obj.image_url:
-            return obj.image_url
-        if obj.image:
-            try:
-                return obj.image.url
-            except Exception:
-                return None
-        return None
-
-
+# ==================================================
+# DEPRECATED: ProductListSerializerV2 (uses ProductVariantV2 - denormalized)
+# Use ProductListSerializerNew instead
+# ==================================================
+''''
 class ProductListSerializerV2(EffectivePriceMixin, serializers.ModelSerializer):
-    """
-    Product list serializer using UNIFIED variant structure.
-    Returns variants_v2 with complete color + size + image data in flat structure.
-
-    This is the RECOMMENDED serializer for new implementations!
-    """
+    """DEPRECATED: Use ProductListSerializerNew which uses normalized ProductColorVariant structure"""
     primary_image = serializers.SerializerMethodField()
-    variants = ProductVariantV2Serializer(source='variants_v2', many=True, read_only=True)
     colors = serializers.SerializerMethodField()
 
     discount_percentage = serializers.DecimalField(
@@ -508,32 +375,12 @@ class ProductListSerializerV2(EffectivePriceMixin, serializers.ModelSerializer):
         ]
 
     def get_primary_image(self, obj):
-        """Get primary image from first variant."""
-        first_variant = obj.variants_v2.filter(is_active=True).first()
-        if first_variant:
-            return first_variant.image_url or (first_variant.image.url if first_variant.image else None)
+        # DEPRECATED: obj.variants_v2 relation no longer exists
         return None
 
     def get_colors(self, obj):
-        """
-        Return unique colors with their hex codes and primary image.
-        Frontend can use this for color selector swatches.
-        """
-        from collections import OrderedDict
-
-        colors = OrderedDict()
-        for variant in obj.variants_v2.filter(is_active=True, stock_quantity__gt=0).order_by('display_order'):
-            if variant.color_name not in colors:
-                colors[variant.color_name] = {
-                    'color_name': variant.color_name,
-                    'hex_primary': variant.hex_primary,
-                    'hex_light': variant.hex_light,
-                    'hex_dark': variant.hex_dark,
-                    'image_url': variant.image_url or (variant.image.url if variant.image else None),
-                    'in_stock': True,
-                }
-
-        return list(colors.values())
+        # DEPRECATED: obj.variants_v2 relation no longer exists
+        return []
 
     def get_average_rating(self, obj):
         return getattr(obj, "average_rating", None)
@@ -542,15 +389,15 @@ class ProductListSerializerV2(EffectivePriceMixin, serializers.ModelSerializer):
         return getattr(obj, "review_count", 0)
 
     def get_is_in_stock(self, obj):
-        """Check if any variant has stock."""
-        return obj.variants_v2.filter(stock_quantity__gt=0, is_active=True).exists()
+        # DEPRECATED: obj.variants_v2 relation no longer exists
+        return False
 
 
 # ==================================================
 # OLD NESTED STRUCTURE SERIALIZERS (DEPRECATED)
 # Product → ColorVariant → SizeVariant
 # ==================================================
-
+'''
 
 class ProductSizeVariantSerializer(serializers.ModelSerializer):
     """Serializer for size variants within a color."""
@@ -684,13 +531,7 @@ class ProductListSerializerNew(EffectivePriceMixin, serializers.ModelSerializer)
         if first_color:
             return first_color.image_url or (first_color.image.url if first_color.image else None)
 
-        # Fallback to old structure
-        primary = obj.images.filter(is_primary=True).first()
-        if primary:
-            return primary.image_url or (primary.image.url if primary.image else None)
-        first = obj.images.first()
-        if first:
-            return first.image_url or (first.image.url if first.image else None)
+        # No fallback - old structure removed
         return None
 
     def get_average_rating(self, obj):
@@ -701,12 +542,6 @@ class ProductListSerializerNew(EffectivePriceMixin, serializers.ModelSerializer)
 
     def get_is_in_stock(self, obj):
         """Check if any color variant has stock."""
-        has_new_stock = obj.color_variants_new.filter(
+        return obj.color_variants_new.filter(
             size_variants__stock_quantity__gt=0
         ).exists()
-
-        if has_new_stock:
-            return True
-
-        # Fallback to old structure
-        return obj.variants.filter(stock_qty__gt=0).exists()

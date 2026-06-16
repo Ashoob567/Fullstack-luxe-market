@@ -3,7 +3,8 @@
  * Handles spaces and special characters in Supabase storage URLs
  */
 export function sanitizeImageUrl(url: string | null | undefined): string {
-  if (!url) {
+  // Handle null, undefined, empty string, or URLs ending with just '/'
+  if (!url || url.trim() === '' || url.endsWith('/products/colors/') || url.endsWith('/products/') || url.endsWith('/images/')) {
     return '/placeholder-product.svg'; // Fallback image
   }
 
@@ -11,6 +12,12 @@ export function sanitizeImageUrl(url: string | null | undefined): string {
     // If it's a full URL, parse and rebuild with proper encoding
     if (url.startsWith('http://') || url.startsWith('https://')) {
       const urlObj = new URL(url);
+
+      // Check if pathname ends with directory (no filename)
+      if (urlObj.pathname.endsWith('/')) {
+        console.warn('Image URL is incomplete (no filename):', url);
+        return '/placeholder-product.svg';
+      }
 
       // Split pathname and encode each segment separately
       const pathSegments = urlObj.pathname.split('/');

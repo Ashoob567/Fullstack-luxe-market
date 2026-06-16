@@ -3,7 +3,7 @@ from django.db.models.signals import pre_save, post_save, post_delete
 from django.dispatch import receiver
 from django.utils.text import slugify
 
-from .models import Category, Product, ProductTag, ProductImage
+from .models import Category, Product, ProductTag, ProductColorVariant
 
 
 @receiver(pre_save, sender=Category)
@@ -81,7 +81,7 @@ def clear_product_cache_on_change(sender, instance, **kwargs):
     invalidate_product_caches()
 
 
-@receiver([post_save, post_delete], sender=ProductImage)
-def clear_product_cache_on_image_change(sender, instance, **kwargs):
-    """Clear caches when product images change"""
+@receiver([post_save, post_delete], sender=ProductColorVariant)
+def clear_product_cache_on_color_variant_change(sender, instance, **kwargs):
+    """Clear caches when color variants (with images) change"""
     invalidate_product_caches()

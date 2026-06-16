@@ -6,7 +6,7 @@ Usage:
     python manage.py fix_image_urls             # Apply fixes
 """
 from django.core.management.base import BaseCommand
-from apps.products.models import ProductImage, ProductColorVariant, ProductVariantV2
+from apps.products.models import  ProductColorVariant
 
 
 class Command(BaseCommand):
@@ -27,19 +27,7 @@ class Command(BaseCommand):
             self.stdout.write(self.style.WARNING('DRY RUN MODE - No changes will be made\n'))
 
         # Fix ProductImage URLs
-        self.stdout.write('\n=== Checking ProductImage ===')
-        for img in ProductImage.objects.all():
-            if img.image_url:
-                original = img.image_url
-                fixed = self.fix_url(original)
-                if fixed != original:
-                    self.stdout.write(f'  {img.id}: {img.product.name if img.product else "N/A"}')
-                    self.stdout.write(f'    OLD: {original}')
-                    self.stdout.write(self.style.SUCCESS(f'    NEW: {fixed}'))
-                    if not dry_run:
-                        img.image_url = fixed
-                        img.save(update_fields=['image_url'])
-                    fixed_count += 1
+        
 
         # Fix ProductColorVariant URLs
         self.stdout.write('\n=== Checking ProductColorVariant ===')
@@ -57,19 +45,7 @@ class Command(BaseCommand):
                     fixed_count += 1
 
         # Fix ProductVariantV2 URLs
-        self.stdout.write('\n=== Checking ProductVariantV2 ===')
-        for variant in ProductVariantV2.objects.all():
-            if variant.image_url:
-                original = variant.image_url
-                fixed = self.fix_url(original)
-                if fixed != original:
-                    self.stdout.write(f'  {variant.id}: {variant.color_name} - {variant.size_name}')
-                    self.stdout.write(f'    OLD: {original}')
-                    self.stdout.write(self.style.SUCCESS(f'    NEW: {fixed}'))
-                    if not dry_run:
-                        variant.image_url = fixed
-                        variant.save(update_fields=['image_url'])
-                    fixed_count += 1
+        
 
         # Summary
         self.stdout.write('\n' + '='*60)

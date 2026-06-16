@@ -128,7 +128,7 @@ class OrderItem(models.Model):
         related_name='order_items',
     )
     variant = models.ForeignKey(
-        'products.ProductVariant',   # adjust to your actual app label
+        'products.ProductSizeVariant',   # Updated to new normalized structure
         on_delete=models.SET_NULL,
         null=True, blank=True,
         related_name='order_items',

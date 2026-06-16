@@ -3,7 +3,7 @@ from django.test import TestCase
 from django.contrib.auth import get_user_model
 from rest_framework.test import APIClient
 
-from apps.products.models import Category, Product, ProductVariant, ProductImage, ProductTag, Review
+from apps.products.models import Category, Product, ProductTag, Review
 
 User = get_user_model()
 

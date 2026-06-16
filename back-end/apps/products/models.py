@@ -166,89 +166,11 @@ class Product(models.Model):
         return self.sale_price or self.base_price
 
 
-class ProductImage(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    product = models.ForeignKey(
-        Product,
-        on_delete=models.CASCADE,
-        related_name="images",
-    )
-    image = models.ImageField(
-        upload_to="products/",
-        storage=get_supabase_storage,
-        null=True,
-        blank=True
-    )
-    image_url = models.CharField(max_length=500, blank=True, default="")
-    alt_text = models.CharField(max_length=200, blank=True)
-    color = models.CharField(max_length=30, blank=True, null=True, help_text="Color variant this image represents")
-    is_primary = models.BooleanField(default=False)
-    order = models.PositiveIntegerField(default=0)
-
-    class Meta:
-        ordering = ["-is_primary", "order"]
-        verbose_name = "Product Image"
-        verbose_name_plural = "Product Images"
-
-    def __str__(self):
-        return f"Image for {self.product.name}"
-
-    def save(self, *args, **kwargs):
-        """
-        Auto-generate image_url from image field after upload.
-
-        FIX: Original only set image_url when it was empty (`not self.image_url`).
-        If the image was replaced/updated, image_url was never refreshed.
-        Now we always regenerate it whenever self.image is set, ensuring
-        the stored URL stays in sync with the actual Supabase file.
-        """
-        if self.image:
-            try:
-                url = self.image.url
-                # url() can return a dict on older supabase-py — guard here too
-                if isinstance(url, dict):
-                    url = url.get("publicUrl") or url.get("data", {}).get("publicUrl", "")
-                if url:
-                    self.image_url = url
-            except Exception as e:
-                logger = logging.getLogger(__name__)
-                logger.error(f"Error getting image URL: {e}")
-        super().save(*args, **kwargs)
-
-
-class ProductVariant(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    product = models.ForeignKey(
-        Product,
-        on_delete=models.CASCADE,
-        related_name="variants",
-    )
-    size = models.CharField(max_length=20, blank=True, null=True)
-    color = models.CharField(max_length=30, blank=True, null=True)
-    sku = models.CharField(max_length=50, unique=True)
-    stock_qty = models.PositiveIntegerField(default=0)
-    price_modifier = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        default=0.00,
-    )
-
-    class Meta:
-        ordering = ["sku"]
-        verbose_name = "Product Variant"
-        verbose_name_plural = "Product Variants"
-
-    def __str__(self):
-        return f"{self.product.name} - {self.sku}"
-
-    @property
-    def final_price(self):
-        base = self.product.computed_price
-        return base + self.price_modifier
-
-    @property
-    def is_in_stock(self):
-        return self.stock_qty > 0
+# ==================================================
+# DEPRECATED MODELS - Removed (use ProductColorVariant + ProductSizeVariant)
+# - ProductImage (old image structure)
+# - ProductVariant (old flat variant structure)
+# ==================================================
 
 class Review(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -280,142 +202,14 @@ class Review(models.Model):
 
 
 # ==================================================
-# UNIFIED VARIANT STRUCTURE - Simple & Clean
-# Product → Variant (color + size + image in one!)
+# DEPRECATED: ProductVariantV2 - Removed (denormalized, duplicates images)
+# Use ProductColorVariant + ProductSizeVariant instead
 # ==================================================
 
 
-class ProductVariantV2(models.Model):
-    """
-    Unified variant model - combines color, size, and image in one record.
-
-    This eliminates the need for nested ColorVariant → SizeVariant structure.
-    Much simpler admin UX: add all variants inline when creating a product!
-
-    Example:
-    - Product: "Cotton Shirt"
-    - Variant 1: Red, M, shirt-red.jpg, SKU: SHIRT-RED-M, stock: 10
-    - Variant 2: Red, L, shirt-red.jpg, SKU: SHIRT-RED-L, stock: 5
-    - Variant 3: Blue, M, shirt-blue.jpg, SKU: SHIRT-BLUE-M, stock: 8
-    """
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-
-    product = models.ForeignKey(
-        Product,
-        on_delete=models.CASCADE,
-        related_name="variants_v2",
-    )
-
-    # Color Information
-    color_name = models.CharField(
-        max_length=50,
-        help_text="Display name: Red, Blue, Cobalt Indigo, etc."
-    )
-    hex_primary = models.CharField(
-        max_length=7,
-        help_text="Primary hex color: #FF0000"
-    )
-    hex_light = models.CharField(
-        max_length=7,
-        blank=True,
-        null=True,
-        help_text="Light shade (optional, for hover effects)"
-    )
-    hex_dark = models.CharField(
-        max_length=7,
-        blank=True,
-        null=True,
-        help_text="Dark shade (optional, for borders)"
-    )
-
-    # Image - attached directly to this variant!
-    image = models.ImageField(
-        upload_to="products/variants/",
-        storage=get_supabase_storage,
-        help_text="Upload image for this color variant"
-    )
-    image_url = models.CharField(
-        max_length=500,
-        blank=True,
-        default="",
-        help_text="Auto-generated Supabase public URL"
-    )
-
-    # Size Information
-    size_name = models.CharField(
-        max_length=20,
-        help_text="Size: S, M, L, XL, 40, 41, etc."
-    )
-
-    # Inventory
-    sku = models.CharField(
-        max_length=100,
-        unique=True,
-        help_text="Unique SKU: SHIRT-RED-M"
-    )
-    stock_quantity = models.PositiveIntegerField(
-        default=0,
-        help_text="Available stock for this variant"
-    )
-    price_adjustment = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        default=0.00,
-        help_text="Price adjustment for this size/color (+/- from base price)"
-    )
-
-    # Metadata
-    is_active = models.BooleanField(default=True)
-    display_order = models.PositiveIntegerField(
-        default=0,
-        help_text="Display order (0 = first)"
-    )
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        ordering = ['display_order', 'color_name', 'size_name']
-        verbose_name = "Product Variant (Unified)"
-        verbose_name_plural = "Product Variants (Unified)"
-        unique_together = ['product', 'color_name', 'size_name']
-        indexes = [
-            models.Index(fields=['product', 'color_name'], name='varv2_prod_color_idx'),
-            models.Index(fields=['sku'], name='varv2_sku_idx'),
-            models.Index(fields=['product', 'is_active', 'stock_quantity'], name='varv2_prod_active_stock_idx'),
-        ]
-
-    def __str__(self):
-        return f"{self.product.name} - {self.color_name} - {self.size_name} ({self.sku})"
-
-    def save(self, *args, **kwargs):
-        """Auto-generate image_url from image field after upload."""
-        if self.image:
-            try:
-                url = self.image.url
-                if isinstance(url, dict):
-                    url = url.get("publicUrl") or url.get("data", {}).get("publicUrl", "")
-                if url:
-                    self.image_url = url
-            except Exception as e:
-                logger = logging.getLogger(__name__)
-                logger.error(f"Error getting variant image URL: {e}")
-        super().save(*args, **kwargs)
-
-    @property
-    def is_in_stock(self):
-        """Check if this variant has stock."""
-        return self.stock_quantity > 0
-
-    @property
-    def final_price(self):
-        """Calculate final price with adjustment."""
-        base_price = self.product.computed_price
-        return base_price + self.price_adjustment
-
-
 # ==================================================
-# OLD NESTED STRUCTURE (DEPRECATED - will be removed)
-# Product → ColorVariant → SizeVariant
+# CURRENT STRUCTURE - Normalized (RECOMMENDED) ✨
+# Product → ColorVariant (with image) → SizeVariant
 # ==================================================
 
 
@@ -495,15 +289,20 @@ class ProductColorVariant(models.Model):
 
     def save(self, *args, **kwargs):
         """Auto-generate image_url from image field after upload."""
-        if self.image:
+        if self.image and self.image.name:
             try:
                 url = self.image.url
                 if isinstance(url, dict):
                     url = url.get("publicUrl") or url.get("data", {}).get("publicUrl", "")
-                if url:
+                if url and url.strip():
                     self.image_url = url
+                else:
+                    self.image_url = ""
             except Exception as e:
                 logger.error(f"Error getting image URL: {e}")
+                self.image_url = ""
+        elif not self.image:
+            self.image_url = ""
         super().save(*args, **kwargs)
 
     @property

@@ -1,7 +1,7 @@
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from apps.products.models import Category, Product, ProductTag, ProductVariant
+from apps.products.models import Category, Product, ProductTag
 
 
 class Command(BaseCommand):
@@ -70,17 +70,7 @@ class Command(BaseCommand):
                     "sale_price": watch_data["sale_price"],
                 },
             )
-            if created:
-                product.tags.set(watch_data["tags"])
-                for variant_data in watch_data["variants"]:
-                    ProductVariant.objects.create(
-                        product=product,
-                        size=variant_data["size"],
-                        color=variant_data["color"],
-                        sku=variant_data["sku"],
-                        stock_qty=50,
-                    )
-                self.stdout.write(f"  Created: {watch_data['name']}")
+            
 
         # Create Undergarments products
         self.stdout.write("Creating undergarments products...")
@@ -130,17 +120,7 @@ class Command(BaseCommand):
                     "sale_price": underwear_data["sale_price"],
                 },
             )
-            if created:
-                product.tags.set(underwear_data["tags"])
-                for variant_data in underwear_data["variants"]:
-                    ProductVariant.objects.create(
-                        product=product,
-                        size=variant_data["size"],
-                        color=variant_data["color"],
-                        sku=variant_data["sku"],
-                        stock_qty=100,
-                    )
-                self.stdout.write(f"  Created: {underwear_data['name']}")
+            
 
         self.stdout.write(
             self.style.SUCCESS(

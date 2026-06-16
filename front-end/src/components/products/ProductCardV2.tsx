@@ -58,7 +58,9 @@ export function ProductCardV2({ product, priority = false }: ProductCardV2Props)
 
   // Current display image - directly from color variant!
   const displayImage = useMemo(() => {
-    return selectedColor?.image_url || product.primary_image || '/placeholder.png';
+    const colorImg = selectedColor?.image_url?.trim();
+    const primaryImg = product.primary_image?.trim();
+    return colorImg || primaryImg || '/placeholder.png';
   }, [selectedColor, product.primary_image]);
 
   // Available sizes for selected color - directly from size_variants!

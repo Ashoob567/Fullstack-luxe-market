@@ -80,7 +80,9 @@ export function ProductDetailPageV2({ product }: ProductDetailPageV2Props) {
 
   // Current display image
   const displayImage = useMemo(() => {
-    return selectedColor?.image_url || product.primary_image || '/placeholder.png';
+    const colorImg = selectedColor?.image_url?.trim();
+    const primaryImg = product.primary_image?.trim();
+    return colorImg || primaryImg || '/placeholder.png';
   }, [selectedColor, product.primary_image]);
 
   // Available sizes for selected color

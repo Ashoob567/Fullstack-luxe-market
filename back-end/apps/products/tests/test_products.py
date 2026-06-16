@@ -3,13 +3,12 @@ Comprehensive product API tests for Luxe Market.
 Tests for product list, filters, detail, featured, arrivals, and image upload.
 """
 from decimal import Decimal
-from unittest.mock import patch, MagicMock
 from django.test import TestCase
 from django.contrib.auth import get_user_model
 from rest_framework.test import APIClient
 from rest_framework import status
 
-from apps.products.models import Category, Product, ProductVariant, ProductImage, ProductTag, Review
+from apps.products.models import Category, Product, ProductTag, Review
 from apps.products.filters import ProductFilter
 
 User = get_user_model()
@@ -36,24 +35,10 @@ def make_product(name="Test Product", slug="test-product", category=None,
     )
 
 
-def make_variant(product, sku="SKU-001", size="M", color="Black", stock_qty=10, price_modifier=Decimal("0")):
-    return ProductVariant.objects.create(
-        product=product,
-        sku=sku,
-        size=size,
-        color=color,
-        stock_qty=stock_qty,
-        price_modifier=price_modifier,
-    )
 
 
-def make_image(product, image_url="https://example.com/image.jpg", is_primary=False, order=0):
-    return ProductImage.objects.create(
-        product=product,
-        image_url=image_url,
-        is_primary=is_primary,
-        order=order,
-    )
+
+
 
 
 class ProductListAPITests(TestCase):
@@ -172,7 +157,7 @@ class ProductFilterAPITests(TestCase):
 
 
 class ProductDetailAPITests(TestCase):
-    """Tests for product detail endpoint."""
+    """Tests for product detail endpoint - DEPRECATED (endpoint removed)."""
 
     def setUp(self):
         self.client = APIClient()
@@ -183,38 +168,14 @@ class ProductDetailAPITests(TestCase):
             category=self.category,
             base_price=Decimal("199.99"),
         )
-        # Add variants
-        self.variant1 = make_variant(self.product, sku="VAR-001", size="S", color="Red")
-        self.variant2 = make_variant(self.product, sku="VAR-002", size="M", color="Blue")
-        # Add images
-        self.image1 = make_image(self.product, image_url="https://example.com/img1.jpg", is_primary=True, order=0)
-        self.image2 = make_image(self.product, image_url="https://example.com/img2.jpg", is_primary=False, order=1)
         # Add tags
         self.tag = ProductTag.objects.create(name="Premium", slug="premium")
         self.product.tags.add(self.tag)
 
-    def test_product_detail_returns_all_data(self):
-        """Get product detail by slug returns all variants and images."""
+    def test_product_detail_endpoint_removed(self):
+        """Product detail endpoint has been removed (404)."""
         response = self.client.get("/api/products/detailed-product/")
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        data = response.json()
-        # Check basic fields
-        self.assertEqual(data["slug"], "detailed-product")
-        self.assertEqual(data["name"], "Detailed Product")
-        # Check images
-        self.assertIn("images", data)
-        self.assertEqual(len(data["images"]), 2)
-        self.assertEqual(data["images"][0]["url"], "https://example.com/img1.jpg")
-        self.assertTrue(data["images"][0]["is_primary"])
-        # Check variants
-        self.assertIn("variants", data)
-        self.assertEqual(len(data["variants"]), 2)
-        variant_skus = {v["sku"] for v in data["variants"]}
-        self.assertIn("VAR-001", variant_skus)
-        self.assertIn("VAR-002", variant_skus)
-        # Check tags
-        self.assertIn("tags", data)
-        self.assertIn("premium", data["tags"])
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
 
 class FeaturedProductsAPITests(TestCase):
@@ -293,10 +254,10 @@ class UnauthenticatedAccessAPITests(TestCase):
         response = self.client.get("/api/products/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-    def test_unauthenticated_can_access_product_detail(self):
-        """Unauthenticated user can access product detail."""
+    def test_unauthenticated_product_detail_endpoint_removed(self):
+        """Product detail endpoint has been removed (404)."""
         response = self.client.get(f"/api/products/{self.product.slug}/")
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_unauthenticated_can_access_featured(self):
         """Unauthenticated user can access featured products."""
@@ -315,7 +276,7 @@ class UnauthenticatedAccessAPITests(TestCase):
 
 
 class ProductImageUploadAPITests(TestCase):
-    """Tests for product image upload endpoint."""
+    """Tests for product image upload endpoint - DEPRECATED (endpoint removed)."""
 
     def setUp(self):
         self.client = APIClient()
@@ -334,115 +295,17 @@ class ProductImageUploadAPITests(TestCase):
             {"email": "admin@luxemarket.com", "password": "adminpass123"},
         )
         self.admin_token = login_response.data["access"]
-        # Create regular user
-        self.regular_user = User.objects.create_user(
-            email="user@example.com",
-            password="userpass123",
-            first_name="Regular",
-            last_name="User",
-        )
-        login_response = self.client.post(
-            "/api/auth/login/",
-            {"email": "user@example.com", "password": "userpass123"},
-        )
-        self.regular_token = login_response.data["access"]
 
-    @patch("apps.products.views.SupabaseStorage")
-    def test_upload_image_without_admin_token_returns_403(self, mock_storage_class):
-        """Image upload without admin token returns 403."""
-        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.regular_token}")
-        # Mock file upload
-        from io import BytesIO
+    def test_image_upload_endpoint_deprecated(self):
+        """Image upload endpoint now returns 404 (endpoint removed)."""
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.admin_token}")
         from django.core.files.uploadedfile import SimpleUploadedFile
         image_file = SimpleUploadedFile("test.jpg", b"fake image content", content_type="image/jpeg")
         response = self.client.post(
             f"/api/products/{self.product.id}/images/",
             {"images": image_file},
         )
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-
-    @patch("apps.products.views.SupabaseStorage")
-    def test_upload_image_with_admin_token(self, mock_storage_class):
-        """Image upload with admin token succeeds."""
-        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.admin_token}")
-        # Mock storage
-        mock_storage = MagicMock()
-        mock_storage.save.return_value = "products/images/test.jpg"
-        mock_storage.url.return_value = "https://example.com/products/images/test.jpg"
-        mock_storage_class.return_value = mock_storage
-
-        from django.core.files.uploadedfile import SimpleUploadedFile
-        image_file = SimpleUploadedFile("test.jpg", b"fake image content", content_type="image/jpeg")
-        response = self.client.post(
-            f"/api/products/{self.product.id}/images/",
-            {"images": image_file},
-        )
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertIn("uploaded", response.data)
-        self.assertEqual(len(response.data["uploaded"]), 1)
-
-    @patch("apps.products.views.SupabaseStorage")
-    def test_upload_image_with_invalid_file_type(self, mock_storage_class):
-        """Image upload with invalid file type returns 400."""
-        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.admin_token}")
-
-        from django.core.files.uploadedfile import SimpleUploadedFile
-        # Invalid file type (PDF instead of image)
-        invalid_file = SimpleUploadedFile("test.pdf", b"fake pdf content", content_type="application/pdf")
-        response = self.client.post(
-            f"/api/products/{self.product.id}/images/",
-            {"images": invalid_file},
-        )
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("errors", response.data)
-
-    @patch("apps.products.views.SupabaseStorage")
-    def test_upload_multiple_images(self, mock_storage_class):
-        """Upload multiple images in one request (up to 8)."""
-        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.admin_token}")
-        mock_storage = MagicMock()
-        mock_storage.save.return_value = "products/images/test.jpg"
-        mock_storage.url.return_value = "https://example.com/products/images/test.jpg"
-        mock_storage_class.return_value = mock_storage
-
-        from django.core.files.uploadedfile import SimpleUploadedFile
-        images = [
-            SimpleUploadedFile(f"test{i}.jpg", b"fake image content", content_type="image/jpeg")
-            for i in range(5)
-        ]
-        response = self.client.post(
-            f"/api/products/{self.product.id}/images/",
-            {"images": images},
-        )
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(len(response.data["uploaded"]), 5)
-
-    @patch("apps.products.views.SupabaseStorage")
-    def test_upload_too_many_images(self, mock_storage_class):
-        """Upload more than 8 images returns 400."""
-        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.admin_token}")
-
-        from django.core.files.uploadedfile import SimpleUploadedFile
-        images = [
-            SimpleUploadedFile(f"test{i}.jpg", b"fake image content", content_type="image/jpeg")
-            for i in range(10)
-        ]
-        response = self.client.post(
-            f"/api/products/{self.product.id}/images/",
-            {"images": images},
-        )
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("Maximum", response.data["error"])
-
-    def test_upload_to_nonexistent_product(self):
-        """Upload to non-existent product returns 404."""
-        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.admin_token}")
-        from django.core.files.uploadedfile import SimpleUploadedFile
-        image_file = SimpleUploadedFile("test.jpg", b"fake image content", content_type="image/jpeg")
-        response = self.client.post(
-            "/api/products/00000000-0000-0000-0000-000000000000/images/",
-            {"images": image_file},
-        )
+        # Endpoint is commented out in urls.py, so returns 404
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
 

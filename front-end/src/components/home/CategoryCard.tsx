@@ -17,7 +17,7 @@ export default function CategoryCard({ category, index }: Props) {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-80px" });
 
-  const imageUrl = category.image ?? "/placeholder.jpg";
+  const imageUrl = category.image && category.image.trim() ? category.image : "/placeholder.jpg";
   const tagline = category.description ?? "Discover the finest selection curated for you.";
   const href = `/category/${category.slug}`;
 

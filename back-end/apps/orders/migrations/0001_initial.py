@@ -13,7 +13,7 @@ class Migration(migrations.Migration):
     dependencies = [
         (
             "products",
-            "0005_product_flash_sale_ends_at_product_flash_sale_price_and_more",
+            "0009_productcolorvariant_productsizevariant_and_more",  # ProductSizeVariant was created in this migration
         ),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
@@ -163,7 +163,7 @@ class Migration(migrations.Migration):
                         null=True,
                         on_delete=django.db.models.deletion.SET_NULL,
                         related_name="order_items",
-                        to="products.productvariant",
+                        to="products.productsizevariant",  # Updated to new model
                     ),
                 ),
             ],

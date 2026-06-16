@@ -19,11 +19,9 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.exceptions import ValidationError
 
-from .models import Category, Product, ProductImage, Review
+from .models import Category, Product, Review
 from .serializers import (
     CategorySerializer,
-    ProductDetailSerializer,
-    ProductListSerializer,
     ProductListSerializerNew,  # NEW: Normalized structure (color → size)
     ReviewSerializer
 )
@@ -47,7 +45,6 @@ def base_product_queryset():
         .select_related("category")
         .prefetch_related(
             "color_variants_new__size_variants",  # NEW: Nested prefetch for normalized structure
-            "images",
             "tags",
             "reviews"
         )
@@ -93,14 +90,14 @@ class ProductListView(ListAPIView):
     def get_queryset(self):
         return base_product_queryset()
 
-
+'''
 class ProductDetailView(RetrieveAPIView):
     serializer_class = ProductDetailSerializer
     lookup_field = "slug"
 
     def get_queryset(self):
         return base_product_queryset()
-
+'''
 
 class FeaturedProductsView(ListAPIView):
     """
@@ -152,7 +149,7 @@ class NewArrivalsView(ListAPIView):
 
 
 class BestsellersView(ListAPIView):
-    serializer_class = ProductListSerializer
+    serializer_class = ProductListSerializerNew
     pagination_class = None
 
     def get_queryset(self):
@@ -176,7 +173,7 @@ class BestsellersView(ListAPIView):
 
 
 class FlashSaleView(ListAPIView):
-    serializer_class = ProductListSerializer
+    serializer_class = ProductListSerializerNew
     pagination_class = ProductPagination
 
     def get_queryset(self):
@@ -196,7 +193,7 @@ class FlashSaleView(ListAPIView):
 
 
 class CategoryProductsView(ListAPIView):
-    serializer_class = ProductListSerializer
+    serializer_class = ProductListSerializerNew
     pagination_class = ProductPagination
 
     def get_queryset(self):
@@ -206,7 +203,7 @@ class CategoryProductsView(ListAPIView):
                 is_active=True, category__slug=category_slug
             )
             .select_related("category")
-            .prefetch_related("images", "variants", "tags")
+            .prefetch_related("color_variants_new__size_variants", "tags")
             .annotate(
                 average_rating=Avg("reviews__rating"),
                 review_count=Coalesce(Count("reviews"), 0),
@@ -214,123 +211,37 @@ class CategoryProductsView(ListAPIView):
         )
 
 
+# ==================================================
+# DEPRECATED: ProductImageUploadView (uses old ProductImage model)
+# Images now uploaded directly via Django Admin on ProductColorVariant
+# ==================================================
+''''
 class ProductImageUploadView(APIView):
     """
-    Upload product images to Supabase Storage.
-
-    POST /api/products/<id>/images/
-    Admin only. Accepts multipart/form-data with up to 8 image files.
-
-    Validation:
-    - Max file size: 5MB per image
-    - Allowed formats: jpg, jpeg, png, webp
-    - Max files: 8 per request
+    DEPRECATED: Images are now uploaded via Django Admin on ProductColorVariant.
+    Each color variant has its own image attached directly.
     """
     permission_classes = [IsAdminUser]
-    parser_classes = [MultiPartParser, FormParser]
-
-    ALLOWED_FORMATS = ["jpg", "jpeg", "png", "webp"]
-    MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
-    MAX_FILES = 8
 
     def post(self, request, pk):
-        try:
-            product = Product.objects.get(pk=pk)
-        except Product.DoesNotExist:
-            return Response(
-                {"error": "Product not found"},
-                status=status.HTTP_404_NOT_FOUND
-            )
+        return Response(
+            {
+                "error": "This endpoint is deprecated. Upload images via Django Admin on Product Color Variants.",
+                "detail": "Each color variant now has its own image field. Go to Admin → Products → Select Product → Add Color Variant with image."
+            },
+            status=status.HTTP_410_GONE
+        )
 
-        files = request.FILES.getlist("images")
+    def get(self, request, pk):
+        return Response(
+            {
+                "message": "This endpoint is deprecated.",
+                "replacement": "Images are now part of ProductColorVariant model."
+            },
+            status=status.HTTP_410_GONE
+        )
 
-        if not files:
-            return Response(
-                {"error": "No images provided"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        if len(files) > self.MAX_FILES:
-            return Response(
-                {"error": f"Maximum {self.MAX_FILES} images allowed per request"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        storage = SupabaseStorage()
-        uploaded_images = []
-        errors = []
-
-        for file in files:
-            try:
-                # Validate file size
-                if file.size > self.MAX_FILE_SIZE:
-                    errors.append({
-                        "file": file.name,
-                        "error": f"File size exceeds 5MB limit ({file.size} bytes)"
-                    })
-                    continue
-
-                # Validate file format
-                file_ext = file.name.split(".")[-1].lower() if "." in file.name else ""
-                content_type = file.content_type.lower() if file.content_type else ""
-
-                is_valid_format = (
-                    file_ext in self.ALLOWED_FORMATS or
-                    content_type in [f"image/{ext}" for ext in self.ALLOWED_FORMATS]
-                )
-
-                if not is_valid_format:
-                    errors.append({
-                        "file": file.name,
-                        "error": f"Invalid format. Allowed: {', '.join(self.ALLOWED_FORMATS)}"
-                    })
-                    continue
-
-                # Generate unique filename
-                import uuid
-                unique_name = f"{uuid.uuid4().hex}.{file_ext or 'jpg'}"
-
-                # Upload to Supabase
-                storage.save(unique_name, file)
-
-                # Get public URL
-                public_url = storage.url(unique_name)
-
-                # Create ProductImage instance
-                product_image = ProductImage.objects.create(
-                    product=product,
-                    image_url=public_url,
-                    alt_text="",
-                    is_primary=product.images.count() == 0,  # First image is primary
-                    order=product.images.count()
-                )
-
-                uploaded_images.append({
-                    "id": str(product_image.id),
-                    "url": public_url,
-                    "is_primary": product_image.is_primary
-                })
-
-                logger.info(f"Uploaded image for product {product.name}: {public_url}")
-
-            except Exception as e:
-                logger.error(f"Error uploading image {file.name}: {e}")
-                errors.append({
-                    "file": file.name,
-                    "error": str(e)
-                })
-
-        response_data = {
-            "uploaded": uploaded_images,
-            "product_id": str(product.id)
-        }
-
-        if errors:
-            response_data["errors"] = errors
-
-        return Response(response_data, status=status.HTTP_201_CREATED)
-
-
+'''
 # ==================================================
 # REVIEW VIEWS
 # ==================================================

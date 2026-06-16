@@ -3,7 +3,6 @@ import nested_admin
 
 from .models import (
     Category, Product, ProductTag, Review,
-    ProductVariantV2,
     ProductColorVariant, ProductSizeVariant
 )
 
@@ -14,33 +13,6 @@ class CategoryAdmin(admin.ModelAdmin):
     prepopulated_fields = {"slug": ("name",)}
     list_filter = ("is_active", "parent")
     search_fields = ("name",)
-
-
-# ==================================================
-# UNIFIED VARIANT ADMIN - Single Page Product Entry ✨
-# (Denormalized - kept for backward compatibility)
-# ==================================================
-
-class ProductVariantV2Inline(nested_admin.NestedTabularInline):
-    """
-    Inline for unified variants - add color + size + image all in one table!
-    NOTE: This is the DENORMALIZED approach (image duplicated per size)
-    For normalized structure, use ProductColorVariantInline below
-    """
-    model = ProductVariantV2
-    extra = 3
-    fields = (
-        'color_name',
-        'hex_primary',
-        'image',
-        'size_name',
-        'sku',
-        'stock_quantity',
-        'price_adjustment',
-        'is_active',
-        'display_order'
-    )
-    ordering = ('display_order', 'color_name', 'size_name')
 
 
 @admin.register(ProductTag)
@@ -58,78 +30,7 @@ class ReviewAdmin(admin.ModelAdmin):
 
 
 # ==================================================
-# UNIFIED VARIANT STANDALONE ADMIN (for bulk editing)
-# ==================================================
-
-@admin.register(ProductVariantV2)
-class ProductVariantV2Admin(admin.ModelAdmin):
-    """
-    Standalone admin for bulk editing variants or viewing all SKUs.
-    Most of the time you'll add variants via Product admin inline.
-    """
-    list_display = (
-        'get_product_name',
-        'color_name',
-        'size_name',
-        'sku',
-        'stock_quantity',
-        'price_adjustment',
-        'is_active',
-        'get_stock_status'
-    )
-    list_filter = (
-        'is_active',
-        'product__category',
-        'color_name',
-        'size_name'
-    )
-    search_fields = ('sku', 'color_name', 'size_name', 'product__name')
-    list_editable = ('stock_quantity', 'is_active')
-    readonly_fields = ('image_url', 'created_at', 'updated_at', 'get_stock_status', 'get_final_price')
-
-    fieldsets = (
-        ('Product', {
-            'fields': ('product',)
-        }),
-        ('Color Information', {
-            'fields': ('color_name', 'hex_primary', 'hex_light', 'hex_dark')
-        }),
-        ('Image', {
-            'fields': ('image', 'image_url'),
-            'description': 'Upload image. URL will be auto-generated.'
-        }),
-        ('Size & Inventory', {
-            'fields': ('size_name', 'sku', 'stock_quantity', 'price_adjustment', 'get_final_price')
-        }),
-        ('Settings', {
-            'fields': ('is_active', 'display_order')
-        }),
-        ('Status', {
-            'fields': ('get_stock_status',),
-            'classes': ('collapse',)
-        }),
-        ('Timestamps', {
-            'fields': ('created_at', 'updated_at'),
-            'classes': ('collapse',)
-        }),
-    )
-
-    def get_product_name(self, obj):
-        return obj.product.name
-    get_product_name.short_description = 'Product'
-    get_product_name.admin_order_field = 'product__name'
-
-    def get_stock_status(self, obj):
-        return '✓ In Stock' if obj.is_in_stock else '✗ Out of Stock'
-    get_stock_status.short_description = 'Stock Status'
-
-    def get_final_price(self, obj):
-        return f"Rs. {obj.final_price}"
-    get_final_price.short_description = 'Final Price'
-
-
-# ==================================================
-# NORMALIZED STRUCTURE ADMIN (RECOMMENDED!) ✨
+# NORMALIZED STRUCTURE ADMIN (CURRENT) ✨
 # Product → Color (with image) → Sizes
 # Proper 3NF normalization!
 # ==================================================
@@ -178,7 +79,7 @@ class ProductAdmin(nested_admin.NestedModelAdmin):
       └── Colors (inline)
             └── Sizes (nested inline)
     """
-    inlines = [ProductColorVariantInline, ProductVariantV2Inline]
+    inlines = [ProductColorVariantInline]
     list_display = (
         "name",
         "category",

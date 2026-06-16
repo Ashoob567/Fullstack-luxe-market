@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from apps.products.models import Product
-from apps.products.serializers import ProductListSerializer
+from apps.products.serializers import ProductListSerializerNew
 from .models import Wishlist
 
 
@@ -10,7 +10,7 @@ class WishlistItemSerializer(serializers.ModelSerializer):
     Returns full product details using the existing ProductListSerializer
     so the frontend gets the same product shape as the product listing page.
     """
-    product = ProductListSerializer(read_only=True)
+    product = ProductListSerializerNew(read_only=True)
 
     class Meta:
         model = Wishlist
