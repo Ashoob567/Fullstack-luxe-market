@@ -18,13 +18,14 @@ from django.conf import settings
 from django.core.cache import cache
 
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.db import transaction
 from django_ratelimit.decorators import ratelimit
 from django.utils.decorators import method_decorator
-
+from rest_framework.permissions import IsAuthenticated
+from django_q.tasks import async_task
 
 from apps.orders.models import Order, OrderItem
 from apps.payments.mock_processor import (
@@ -42,11 +43,11 @@ SHIPPING_FLAT_RATE = Decimal("200.00")   # PKR — adjust as needed
 FREE_SHIPPING_THRESHOLD = Decimal("3000.00")
 
 
-def _get_cart(user_id: int) -> dict:
+def _get_cart(cart_key: str) -> dict:
     """
-    Fetch the user's cart from Redis.
+    Fetch the cart from Redis.
     Expected Redis structure:
-        key  → "cart:{user_id}"
+        key  → "cart:{user_id}" or "cart:guest:{guest_id}"
         value→ JSON: {
             "items": [
                 {
@@ -64,15 +65,14 @@ def _get_cart(user_id: int) -> dict:
             "discount_amount": "150.00"   # optional
         }
     """
-    cart_key = f"cart:{user_id}"
     raw = cache.get(cart_key)
     if not raw:
         return {}
     return json.loads(raw) if isinstance(raw, str) else raw
 
 
-def _clear_cart(user_id: int) -> None:
-    cache.delete(f"cart:{user_id}")
+def _clear_cart(cart_key: str) -> None:
+    cache.delete(cart_key)
 
 
 def _calculate_totals(cart: dict) -> dict:
@@ -134,6 +134,7 @@ def _create_order_and_items(
     mock_payment_id: str | None,
     is_discreet: bool,
     notes: str | None,
+    guest_email: str | None = None,
 ) -> Order:
     """
     Persist the Order + OrderItems and reduce stock.
@@ -142,6 +143,7 @@ def _create_order_and_items(
     with transaction.atomic():
         order = Order.objects.create(
         user=user,
+        guest_email=guest_email,
         status=order_status,
         payment_method=payment_method,
         payment_status=payment_status,
@@ -172,13 +174,13 @@ def _create_order_and_items(
 
         # ── Reduce stock ──────────────────────────────────────────────────
         # Import here to avoid circular imports.
-        from apps.products.models import ProductVariant  # adjust app label if needed
+        from apps.products.models import ProductSizeVariant
         try:
-            variant = ProductVariant.objects.select_for_update().get(
+            variant = ProductSizeVariant.objects.select_for_update().get(
                 pk=item["variant_id"]
             )
-            variant.stock_qty = max(0, variant.stock_qty - quantity)
-            variant.save(update_fields=["stock_qty"])
+            variant.stock_quantity = max(0, variant.stock_quantity - quantity)
+            variant.save(update_fields=["stock_quantity"])
         except Exception:
             logger.warning(
                 "Could not reduce stock for variant %s — skipping.",
@@ -203,12 +205,15 @@ class CreatePaymentIntentView(APIView):
             "streetAddress": "123 Main St",
             "city":      "Lahore",
             "province":  "Punjab",
-            "postalCode": "54000"
+            "postalCode": "54000",
+            "email":     "guest@example.com"  // required for guest users
         },
         "payment_method": "mock_card" | "cod",
         "card_number":    "4242424242424242",   // mock_card only
         "is_discreet":    false,
-        "notes":          "Leave at gate"       // optional
+        "notes":          "Leave at gate",      // optional
+        "cart_id":        "guest_abc123",       // required for guest users
+        "cart_items":     [...]                 // optional for guest users (if cart not in Redis)
     }
 
     Responses:
@@ -217,12 +222,31 @@ class CreatePaymentIntentView(APIView):
         400 { detail: "..." }
     """
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     def post(self, request):
         data = request.data
 
-        # ── 1. Validate required fields ───────────────────────────────────────
+        # ── 1. Determine user context (authenticated or guest) ────────────────
+        is_authenticated = request.user and request.user.is_authenticated
+
+        if is_authenticated:
+            cart_key = f"cart:{request.user.id}"
+            user = request.user
+            guest_email = None
+        else:
+            # Guest checkout
+            cart_id = data.get("cart_id")
+            if not cart_id:
+                return Response(
+                    {"detail": "cart_id is required for guest checkout."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            cart_key = f"cart:guest:{cart_id}"
+            user = None
+            guest_email = None  # Will be extracted from shipping_address
+
+        # ── 2. Validate required fields ───────────────────────────────────────
         shipping_address = data.get("shipping_address")
         payment_method   = data.get("payment_method")
 
@@ -243,15 +267,35 @@ class CreatePaymentIntentView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        # Extract guest email if not authenticated
+        if not is_authenticated:
+            guest_email = shipping_address.get("email")
+            if not guest_email:
+                return Response(
+                    {"detail": "email is required in shipping_address for guest checkout."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
         if payment_method not in ("mock_card", "cod"):
             return Response(
                 {"detail": "payment_method must be 'mock_card' or 'cod'."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # ── 2. Fetch & validate cart ──────────────────────────────────────────
-        cart = _get_cart(request.user.id)
-        if not cart or not cart.get("items"):
+        # ── 3. Fetch & validate cart ──────────────────────────────────────────
+        cart = _get_cart(cart_key)
+
+        # For guest users: if cart not in Redis, accept cart_items from request
+        if (not cart or not cart.get("items")) and not is_authenticated:
+            cart_items = data.get("cart_items")
+            if cart_items and isinstance(cart_items, list) and len(cart_items) > 0:
+                cart = {"items": cart_items}
+            else:
+                return Response(
+                    {"detail": "Your cart is empty. Please add items before checkout."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+        elif not cart or not cart.get("items"):
             return Response(
                 {"detail": "Your cart is empty."},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -261,11 +305,11 @@ class CreatePaymentIntentView(APIView):
         is_discreet = bool(data.get("is_discreet", False))
         notes       = data.get("notes") or None
 
-        # ── 3a. Cash on Delivery ──────────────────────────────────────────────
+        # ── 4a. Cash on Delivery ──────────────────────────────────────────────
         if payment_method == "cod":
             try:
                 order = _create_order_and_items(
-                    user=request.user,
+                    user=user,
                     cart=cart,
                     totals=totals,
                     shipping_address=shipping_address,
@@ -275,6 +319,7 @@ class CreatePaymentIntentView(APIView):
                     mock_payment_id=None,
                     is_discreet=is_discreet,
                     notes=notes,
+                    guest_email=guest_email,
                 )
             except Exception as exc:
                 logger.exception("COD order creation failed: %s", exc)
@@ -283,8 +328,16 @@ class CreatePaymentIntentView(APIView):
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 )
 
-            _clear_cart(request.user.id)
-            logger.info("COD order %s created for user %s.", order.order_number, request.user.id)
+            _clear_cart(cart_key)
+            customer_id = user.id if user else guest_email
+            logger.info("COD order %s created for customer %s.", order.order_number, customer_id)
+
+            # ── Async Task: Send order confirmation email ──
+            async_task(
+                'apps.orders.tasks.send_order_confirmation_email',
+                str(order.id),
+                task_name=f'order_confirmation_{order.order_number}'
+            )
 
             return Response(
                 {
@@ -295,7 +348,7 @@ class CreatePaymentIntentView(APIView):
                 status=status.HTTP_200_OK,
             )
 
-        # ── 3b. Mock Card Payment ─────────────────────────────────────────────
+        # ── 4b. Mock Card Payment ─────────────────────────────────────────────
         card_number = str(data.get("card_number", "")).replace(" ", "").replace("-", "")
         if not card_number or len(card_number) < 12:
             return Response(
@@ -304,9 +357,10 @@ class CreatePaymentIntentView(APIView):
             )
 
         # Step i — create intent (generates fake IDs)
+        customer_id = user.id if user else guest_email
         intent = create_mock_payment_intent(
             amount_pkr=float(totals["total_amount"]),
-            metadata={"user_id": request.user.id, "cart_key": f"cart:{request.user.id}"},
+            metadata={"customer_id": customer_id, "cart_key": cart_key},
         )
 
         # Step ii — attempt confirmation
@@ -317,8 +371,8 @@ class CreatePaymentIntentView(APIView):
 
         if result["status"] == "failed":
             logger.info(
-                "Mock card payment failed for user %s: %s",
-                request.user.id, result.get("error"),
+                "Mock card payment failed for customer %s: %s",
+                customer_id, result.get("error"),
             )
             return Response(
                 {"status": "failed", "error": result.get("error", "Payment failed.")},
@@ -328,7 +382,7 @@ class CreatePaymentIntentView(APIView):
         # Step iii — payment succeeded → persist order
         try:
             order = _create_order_and_items(
-                user=request.user,
+                user=user,
                 cart=cart,
                 totals=totals,
                 shipping_address=shipping_address,
@@ -338,6 +392,7 @@ class CreatePaymentIntentView(APIView):
                 mock_payment_id=intent["id"],
                 is_discreet=is_discreet,
                 notes=notes,
+                guest_email=guest_email,
             )
         except Exception as exc:
             logger.exception("Order creation after successful mock payment failed: %s", exc)
@@ -346,10 +401,17 @@ class CreatePaymentIntentView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
-        _clear_cart(request.user.id)
+        _clear_cart(cart_key)
         logger.info(
-            "Mock card order %s created for user %s (intent: %s).",
-            order.order_number, request.user.id, intent["id"],
+            "Mock card order %s created for customer %s (intent: %s).",
+            order.order_number, customer_id, intent["id"],
+        )
+
+        # ── Async Task: Send order confirmation email ──
+        async_task(
+            'apps.orders.tasks.send_order_confirmation_email',
+            str(order.id),
+            task_name=f'order_confirmation_{order.order_number}'
         )
 
         return Response(

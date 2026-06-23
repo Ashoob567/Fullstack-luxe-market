@@ -25,6 +25,11 @@ export const addressSchema = z.object({
     .max(50, "Last name must be less than 50 characters.")
     .regex(/^[a-zA-Z\s'-]+$/, "Last name can only contain letters, spaces, hyphens, and apostrophes."),
 
+  email: z
+    .string()
+    .email("Please enter a valid email address.")
+    .optional(),
+
   phone: z
     .string()
     .regex(
@@ -51,6 +56,11 @@ province: z.enum(provinces, {
   postalCode: z
     .string()
     .regex(/^[0-9]{5}$/, "Postal code must be exactly 5 digits."),
+});
+
+// Guest checkout requires email
+export const guestAddressSchema = addressSchema.extend({
+  email: z.string().email("Please enter a valid email address."),
 });
 
 export type AddressFormData = z.infer<typeof addressSchema>;

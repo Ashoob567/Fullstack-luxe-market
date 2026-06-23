@@ -22,5 +22,10 @@ redis>=5.0
 django-redis>=5.4
 django-ratelimit>=4.1
 
+# Django Q - Async Task Queue
+django-q2>=1.6.0
+
 # HTTP requests (for Next.js cache revalidation)
 requests>=2.31.0
+
+croniter>=6.2.2

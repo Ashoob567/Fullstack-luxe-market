@@ -44,6 +44,8 @@ INSTALLED_APPS = [
     'apps.cart',
     'apps.coupons',
     'apps.wishlists',
+    # Django Q - Async Task Queue
+    'django_q',
 ]
 
 MIDDLEWARE = [
@@ -161,3 +163,59 @@ CACHES = {
         }
     }
 }
+
+# ============================================================================
+# DJANGO Q - ASYNC TASK QUEUE CONFIGURATION
+# ============================================================================
+Q_CLUSTER = {
+    'name': 'LuxeMarket',
+    'workers': 4,  # Number of worker processes (adjust based on CPU cores)
+    'recycle': 500,  # Recycle worker after 500 tasks to prevent memory leaks
+    'timeout': 60,  # Task timeout in seconds
+    'retry': 120,  # Retry failed tasks after 120 seconds
+    'queue_limit': 50,  # Max tasks queued per worker
+    'bulk': 10,  # Process tasks in bulk for better performance
+    'orm': 'default',  # Use PostgreSQL as task queue (no extra Redis db needed)
+
+    # Alternative: Use Redis (if you prefer Redis over PostgreSQL for tasks)
+    # 'redis': {
+    #     'host': os.getenv('REDIS_HOST', '127.0.0.1'),
+    #     'port': int(os.getenv('REDIS_PORT', 6379)),
+    #     'db': 1,  # Use db 1 for tasks (db 0 is for cart cache)
+    # },
+
+    # Task execution settings
+    'catch_up': True,  # Execute missed scheduled tasks on worker startup
+    'save_limit': 250,  # Keep last 250 successful tasks in database
+    'sync': False,  # Always run tasks asynchronously (never inline)
+
+    # Logging
+    'log_level': 'INFO',
+    'django_redis': 'default',  # Use default Redis cache for broker
+}
+
+# ============================================================================
+# EMAIL CONFIGURATION
+# ============================================================================
+# Email backend (use console for development, SMTP for production)
+EMAIL_BACKEND = os.getenv(
+    'EMAIL_BACKEND',
+    'django.core.mail.backends.console.EmailBackend'  # Prints to console in dev
+)
+
+# SMTP settings (for production)
+EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
+EMAIL_PORT = int(os.getenv('EMAIL_PORT', 587))
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True').lower() in ('true', '1', 'yes')
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'Luxe Market <noreply@luxemarket.com>')
+
+# For production, set in .env:
+# EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+# EMAIL_HOST=smtp.gmail.com
+# EMAIL_PORT=587
+# EMAIL_USE_TLS=True
+# EMAIL_HOST_USER=your-email@gmail.com
+# EMAIL_HOST_PASSWORD=your-app-password
+# DEFAULT_FROM_EMAIL=Luxe Market <orders@luxemarket.com>

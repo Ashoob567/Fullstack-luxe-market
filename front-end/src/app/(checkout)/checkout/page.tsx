@@ -56,8 +56,16 @@ export default function CheckoutPage() {
   const [total,       setTotal]       = useState(0);
   const [couponCode,  setCouponCode]  = useState<string | null>(null);
   const [cartLoading, setCartLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   const checkout = useCheckout();
+
+  // Check if user is authenticated
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setIsAuthenticated(!!localStorage.getItem('accessToken'));
+    }
+  }, []);
 
   // FormProvider for MockCardInput's useFormContext
   const cardForm = useForm({
@@ -156,7 +164,10 @@ export default function CheckoutPage() {
 
               {/* Address */}
               <div className="rounded-lg border bg-card p-6">
-                <AddressForm onChange={checkout.onAddressChange} />
+                <AddressForm
+                  onChange={checkout.onAddressChange}
+                  isAuthenticated={isAuthenticated}
+                />
               </div>
 
               <Separator />

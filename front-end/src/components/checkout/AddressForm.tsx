@@ -3,7 +3,7 @@
 // src/components/checkout/AddressForm.tsx
 //
 // Aligned with Django backend shipping_address JSONField which expects:
-// { firstName, lastName, phone, streetAddress, city, province, postalCode }
+// { firstName, lastName, email (guest only), phone, streetAddress, city, province, postalCode }
 
 import { useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/select';
 import {
   addressSchema,
+  guestAddressSchema,
   type AddressFormData,
   PROVINCE_OPTIONS,
 } from '@/lib/validations/checkout';
@@ -46,6 +47,8 @@ interface AddressFormProps {
   savedAddresses?: SavedAddress[];
   /** Optional pre-fill (e.g. restore state after back-navigation) */
   defaultValues?: Partial<AddressFormData>;
+  /** Whether user is authenticated (email required for guests) */
+  isAuthenticated?: boolean;
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -54,7 +57,10 @@ export function AddressForm({
   onChange,
   savedAddresses = [],
   defaultValues,
+  isAuthenticated = false,
 }: AddressFormProps) {
+  const schema = isAuthenticated ? addressSchema : guestAddressSchema;
+
   const {
     register,
     control,
@@ -62,11 +68,12 @@ export function AddressForm({
     setValue,
     formState: { errors },
   } = useForm<AddressFormData>({
-    resolver: zodResolver(addressSchema),
+    resolver: zodResolver(schema),
     mode: 'onChange',
     defaultValues: {
       firstName:     defaultValues?.firstName     ?? '',
       lastName:      defaultValues?.lastName      ?? '',
+      email:         defaultValues?.email         ?? '',
       phone:         defaultValues?.phone         ?? '',
       streetAddress: defaultValues?.streetAddress ?? '',
       city:          defaultValues?.city          ?? '',
@@ -78,11 +85,11 @@ export function AddressForm({
   // Notify parent on every field change
   useEffect(() => {
     const subscription = watch((values) => {
-      const result = addressSchema.safeParse(values);
+      const result = schema.safeParse(values);
       onChange(values as AddressFormData, result.success);
     });
     return () => subscription.unsubscribe();
-  }, [watch, onChange]);
+  }, [watch, onChange, schema]);
 
   // Auto-fill all fields when user picks a saved address
   function handleSavedAddressSelect(id: string | null) {
@@ -148,6 +155,23 @@ export function AddressForm({
           )}
         </div>
       </div>
+
+      {/* ── Email (guest only) ────────────────────────────────────────── */}
+      {!isAuthenticated && (
+        <div className="space-y-1.5">
+          <Label htmlFor="email">Email Address</Label>
+          <Input
+            id="email"
+            type="email"
+            placeholder="your.email@example.com"
+            autoComplete="email"
+            {...register('email')}
+          />
+          {errors.email && (
+            <p className="text-xs text-destructive">{errors.email.message}</p>
+          )}
+        </div>
+      )}
 
       {/* ── Phone ─────────────────────────────────────────────────────── */}
       <div className="space-y-1.5">

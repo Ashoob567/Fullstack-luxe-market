@@ -14,6 +14,23 @@ import type { CreatePaymentIntentResponse } from '@/types';
 import { rawCardNumber }                  from '@/lib/validations/checkout';
 import { post }                           from '@/lib/api';
 
+// ── Guest Cart ID Helper ──────────────────────────────────────────────────────
+function getOrCreateGuestId(): string {
+  if (typeof window === 'undefined') return '';
+
+  let guestId = localStorage.getItem('guest_cart_id');
+  if (!guestId) {
+    guestId = `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    localStorage.setItem('guest_cart_id', guestId);
+  }
+  return guestId;
+}
+
+function isAuthenticated(): boolean {
+  if (typeof window === 'undefined') return false;
+  return !!localStorage.getItem('accessToken');
+}
+
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 export interface CheckoutState {
@@ -60,12 +77,34 @@ export function useCheckout() {
     setIsSubmitting(true);
 
     try {
+      const isAuth = isAuthenticated();
+
       const payload: Record<string, unknown> = {
         shipping_address: addressData,
         payment_method:   selectedMethod,
         is_discreet:      isDiscreet,
         notes:            notes || undefined,
       };
+
+      // For guest users: include cart_id and cart_items
+      if (!isAuth) {
+        payload.cart_id = getOrCreateGuestId();
+
+        // Get cart from localStorage and transform for backend
+        const savedCart = localStorage.getItem('cart');
+        if (savedCart) {
+          const cartItems = JSON.parse(savedCart);
+          payload.cart_items = cartItems.map((item: CartItem) => ({
+            product_id: item.product_id,
+            variant_id: item.variant_id,
+            product_name: item.name,
+            variant_info: { size: item.size, color: item.color },
+            unit_price: item.price,
+            quantity: item.quantity,
+            image_url: item.image,
+          }));
+        }
+      }
 
       // Attach raw card number for mock_card (strip spaces)
       if (selectedMethod === 'mock_card' && cardData) {
