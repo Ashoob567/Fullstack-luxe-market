@@ -1,0 +1,82 @@
+# Alert rules for Luxe Market
+groups:
+  - name: luxe_market_alerts
+    interval: 30s
+    rules:
+      # OTP Service Alerts
+      - alert: HighOTPFailureRate
+        expr: |
+          (
+            sum(rate(otp_sent_total{status!="success"}[5m])) /
+            sum(rate(otp_sent_total[5m]))
+          ) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          component: otp
+        annotations:
+          summary: "High OTP failure rate detected"
+          description: "OTP failure rate is {{ $value | humanizePercentage }} over the last 5 minutes"
+
+      - alert: OTPVerificationTooSlow
+        expr: |
+          histogram_quantile(0.95,
+            rate(otp_verify_duration_seconds_bucket[5m])
+          ) > 1.0
+        for: 3m
+        labels:
+          severity: warning
+          component: otp
+        annotations:
+          summary: "OTP verification is slow"
+          description: "95th percentile OTP verification latency is {{ $value }}s"
+
+      # Order Service Alerts
+      - alert: HighOrderFailureRate
+        expr: |
+          (
+            sum(rate(order_created_total{status!="success"}[10m])) /
+            sum(rate(order_created_total[10m]))
+          ) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+          component: orders
+        annotations:
+          summary: "High order failure rate"
+          description: "{{ $value | humanizePercentage }} of orders are failing"
+
+      - alert: SlowOrderCreation
+        expr: |
+          histogram_quantile(0.95,
+            rate(order_creation_duration_seconds_bucket[5m])
+          ) > 5.0
+        for: 5m
+        labels:
+          severity: warning
+          component: orders
+        annotations:
+          summary: "Order creation is slow"
+          description: "95th percentile order creation time is {{ $value }}s"
+
+      # Redis Health Alerts
+      - alert: RedisErrors
+        expr: rate(redis_errors_total[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: critical
+          component: redis
+        annotations:
+          summary: "Redis errors detected"
+          description: "Redis is experiencing {{ $value }} errors per second"
+
+      # Application Health
+      - alert: DjangoDown
+        expr: up{job="luxe-market-django"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: django
+        annotations:
+          summary: "Django application is down"
+          description: "Django /metrics endpoint is unreachable"

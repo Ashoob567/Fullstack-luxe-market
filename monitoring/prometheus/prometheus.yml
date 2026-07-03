@@ -1,0 +1,34 @@
+# Prometheus configuration for Luxe Market
+global:
+  scrape_interval: 15s       # Scrape metrics every 15 seconds
+  evaluation_interval: 15s   # Evaluate rules every 15 seconds
+  external_labels:
+    cluster: 'luxe-market'
+    environment: 'development'
+
+# Alert manager (optional - uncomment when ready)
+# alerting:
+#   alertmanagers:
+#     - static_configs:
+#         - targets:
+#           - localhost:9093
+
+# Rule files (for alerts)
+rule_files:
+  - 'alerts.yml'
+
+# Scrape configurations
+scrape_configs:
+  # Django application metrics
+  - job_name: 'luxe-market-django'
+    static_configs:
+      - targets: ['host.docker.internal:8000']  # For Docker on Windows
+        # For native installation, use: ['localhost:8000']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+    scrape_timeout: 10s
+
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']

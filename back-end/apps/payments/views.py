@@ -8,11 +8,14 @@ Endpoints
 ─────────────────────────────────────────────────────
 POST /api/payments/create-intent/     CreatePaymentIntentView
 GET  /api/payments/mock-status/<id>/  MockPaymentStatusView
+POST /api/payments/send-otp/          SendOTPView
+POST /api/payments/verify-and-create-order/  VerifyOTPAndCreateOrderView
 """
 
 import json
 import logging
 from decimal import Decimal
+import uuid
 
 from django.conf import settings
 from django.core.cache import cache
@@ -26,6 +29,7 @@ from django_ratelimit.decorators import ratelimit
 from django.utils.decorators import method_decorator
 from rest_framework.permissions import IsAuthenticated
 from django_q.tasks import async_task
+from drf_spectacular.utils import extend_schema, OpenApiResponse
 
 from apps.orders.models import Order, OrderItem
 from apps.payments.mock_processor import (
@@ -33,8 +37,29 @@ from apps.payments.mock_processor import (
     create_mock_payment_intent,
     get_mock_intent_status,
 )
+from apps.payments.serializers import (
+    SendOTPSerializer,
+    VerifyOTPAndOrderSerializer,
+)
+from apps.payments import otp_service
+from apps.payments.checkout_service import (
+    create_order as create_order_with_idempotency,
+    resolve_cart,
+    clear_cart as clear_cart_service,
+    CheckoutError,
+    EmptyCartError,
+    PaymentDeclinedError,
+)
+from apps.core.monitoring import active_verifications
+import structlog
 
 logger = logging.getLogger(__name__)
+otp_logger = structlog.get_logger(__name__)
+
+
+def _get_request_id(request) -> str:
+    """Extract request ID from middleware."""
+    return getattr(request, "request_id", str(uuid.uuid4()))
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -453,6 +478,371 @@ class MockPaymentStatusView(APIView):
                 "order_status":   order.status,
                 "order_id":       str(order.id),
                 "order_number":   order.order_number,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# OTP VERIFICATION ENDPOINTS
+# ══════════════════════════════════════════════════════════════════════════════
+
+@extend_schema(
+    request=SendOTPSerializer,
+    responses={
+        200: OpenApiResponse(
+            description="OTP sent successfully. Timing constants included.",
+        ),
+        400: OpenApiResponse(description="Validation error"),
+        429: OpenApiResponse(description="Rate limit or cooldown active"),
+        503: OpenApiResponse(description="Delivery failed or Redis unavailable"),
+    },
+    tags=["OTP"],
+)
+@method_decorator(
+    ratelimit(key="ip", rate="5/m", method="POST", block=True),
+    name="post",
+)
+class SendOTPView(APIView):
+    """
+    Send OTP to email or phone.
+
+    Rate limit: 5 requests per minute per IP
+    Additional limits: 3 sends per contact per 10min (enforced in service layer)
+
+    Returns timing constants (otp_expires_in_seconds, resend_available_in_seconds)
+    so frontend NEVER hardcodes durations.
+    """
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        request_id = _get_request_id(request)
+
+        # Validate input
+        serializer = SendOTPSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        contact = serializer.validated_data["contact"]
+        contact_type = serializer.validated_data["contact_type"]
+
+        # Generate and store OTP
+        otp = otp_service.generate_otp()
+
+        try:
+            result = otp_service.store_otp(contact, otp, contact_type)
+        except otp_service.RedisUnavailableError:
+            otp_logger.error("redis_unavailable_send_otp", request_id=request_id)
+            otp_service.record_otp_sent_metric(contact_type, "redis_error")
+            return Response(
+                {"detail": "Service temporarily unavailable. Please try again."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
+        if not result["ok"]:
+            reason = result["reason"]
+            otp_service.record_otp_sent_metric(contact_type, reason)
+
+            if reason == "cooldown":
+                return Response(
+                    {
+                        "detail": f"Please wait before requesting another code.",
+                        "reason": reason,
+                    },
+                    status=status.HTTP_429_TOO_MANY_REQUESTS,
+                )
+
+            if reason == "rate_limit":
+                return Response(
+                    {
+                        "detail": "Too many requests. Try again later.",
+                        "reason": reason,
+                    },
+                    status=status.HTTP_429_TOO_MANY_REQUESTS,
+                )
+
+        # Send OTP via email/SMS
+        if contact_type == "email":
+            sent = otp_service.send_email_otp(contact, otp)
+        else:
+            sent = otp_service.send_sms_otp(contact, otp)
+
+        if not sent:
+            otp_service.record_otp_sent_metric(contact_type, "delivery_failed")
+            return Response(
+                {"detail": "Failed to send code. Please try again."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
+        otp_service.record_otp_sent_metric(contact_type, "success")
+
+        otp_logger.info(
+            "otp_sent_successfully",
+            contact_type=contact_type,
+            request_id=request_id,
+        )
+
+        return Response(
+            {
+                "message": "Verification code sent.",
+                # ⚠️ Frontend must use these values, not hardcode durations
+                "otp_expires_in_seconds": otp_service.OTP_EXPIRY_SECONDS,
+                "resend_available_in_seconds": otp_service.RESEND_COOLDOWN_SECONDS,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+@extend_schema(
+    request=VerifyOTPAndOrderSerializer,
+    responses={
+        200: OpenApiResponse(description="OTP verified and order created"),
+        400: OpenApiResponse(description="Invalid OTP or validation error"),
+        402: OpenApiResponse(description="Payment declined"),
+        409: OpenApiResponse(description="OTP locked - too many failures"),
+        503: OpenApiResponse(description="Redis or payment service unavailable"),
+    },
+    tags=["OTP", "Orders"],
+)
+@method_decorator(
+    ratelimit(key="ip", rate="10/m", method="POST", block=True),
+    name="post",
+)
+class VerifyOTPAndCreateOrderView(APIView):
+    """
+    Verify OTP and create order atomically.
+
+    Rate limit: 10 requests per minute per IP
+
+    Flow:
+      1. Validate OTP (constant-time, lockout after 5 failures)
+      2. Cross-check verified contact matches shipping address
+      3. Resolve cart (Redis or fallback)
+      4. Create order (atomic transaction + idempotency)
+      5. Clear cart + trigger confirmation email
+      6. Return order summary
+    """
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        request_id = _get_request_id(request)
+
+        # Track in-flight verifications
+        active_verifications.inc()
+
+        try:
+            return self._process_verification(request, request_id)
+        finally:
+            active_verifications.dec()
+
+    def _process_verification(self, request, request_id):
+        # Validate input
+        serializer = VerifyOTPAndOrderSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        data = serializer.validated_data
+        contact = data["contact"]
+        contact_type = data["contact_type"]
+        otp = data["otp"]
+        idempotency_key = data["idempotency_key"]
+        order_data = data["order_data"]
+        shipping_address = order_data["shipping_address"]
+
+        is_auth = request.user and request.user.is_authenticated
+        user_id = request.user.id if is_auth else None
+
+        # --- Verify OTP ---
+        import time
+        verify_start = time.time()
+
+        try:
+            verify_result = otp_service.verify_otp(
+                contact, otp, contact_type, user_id=user_id
+            )
+        except otp_service.RedisUnavailableError:
+            otp_logger.error("redis_unavailable_verify_otp", request_id=request_id)
+            otp_service.record_otp_verify_metric(
+                contact_type, "redis_error", time.time() - verify_start
+            )
+            return Response(
+                {"detail": "Service temporarily unavailable. Please try again."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
+        verify_duration = time.time() - verify_start
+
+        if not verify_result["ok"]:
+            reason = verify_result["reason"]
+            otp_service.record_otp_verify_metric(contact_type, reason, verify_duration)
+
+            if reason == "locked":
+                return Response(
+                    {
+                        "verified": False,
+                        "detail": "Too many incorrect attempts. Please request a new code.",
+                        "reason": reason,
+                    },
+                    status=status.HTTP_409_CONFLICT,
+                )
+
+            return Response(
+                {
+                    "verified": False,
+                    "detail": "Invalid or expired verification code.",
+                    "reason": reason,
+                    "attempts_remaining": verify_result.get("attempts_remaining", 0),
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        otp_service.record_otp_verify_metric(contact_type, "success", verify_duration)
+
+        otp_logger.info(
+            "otp_verified_success",
+            contact_type=contact_type,
+            request_id=request_id,
+        )
+
+        # --- Cross-check contact matches shipping address ---
+        if contact_type == "email":
+            shipping_email = shipping_address.get("email")
+            if shipping_email and shipping_email.lower() != contact.lower():
+                otp_logger.warning(
+                    "contact_mismatch",
+                    verified_email=contact,
+                    shipping_email=shipping_email,
+                )
+                return Response(
+                    {
+                        "detail": "Verified email does not match shipping address email.",
+                        "code": "contact_mismatch",
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        elif contact_type == "phone":
+            shipping_phone = shipping_address.get("phone")
+            if shipping_phone != contact:
+                otp_logger.warning(
+                    "contact_mismatch",
+                    verified_phone=contact,
+                    shipping_phone=shipping_phone,
+                )
+                return Response(
+                    {
+                        "detail": "Verified phone does not match shipping address phone.",
+                        "code": "contact_mismatch",
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        # --- Resolve cart ---
+        cart_id = order_data.get("cart_id")
+        cart_items = order_data.get("cart_items")
+
+        if is_auth:
+            cart_key = f"cart:user_{user_id}"
+        elif cart_id:
+            cart_key = f"cart:guest:{cart_id}"
+        else:
+            cart_key = None
+
+        try:
+            if cart_key:
+                cart = resolve_cart(cart_key, fallback_items=cart_items)
+            elif cart_items:
+                cart = {"items": cart_items}
+            else:
+                raise EmptyCartError()
+        except EmptyCartError as exc:
+            otp_logger.warning("empty_cart_at_checkout", request_id=request_id)
+            return Response(
+                {"detail": str(exc), "code": exc.code},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # --- Create order ---
+        try:
+            order = create_order_with_idempotency(
+                user=request.user if is_auth else None,
+                cart=cart,
+                shipping_address=shipping_address,
+                payment_method=order_data["payment_method"],
+                card_number=order_data.get("card_number"),
+                is_discreet=order_data.get("is_discreet", False),
+                notes=order_data.get("notes"),
+                guest_email=contact if contact_type == "email" and not is_auth else None,
+                idempotency_key=idempotency_key,
+                contact_type=contact_type,
+            )
+
+        except PaymentDeclinedError as exc:
+            otp_logger.info(
+                "payment_declined_at_verify",
+                request_id=request_id,
+                reason=exc.message,
+            )
+            return Response(
+                {"detail": exc.message, "code": exc.code},
+                status=exc.status,
+            )
+
+        except CheckoutError as exc:
+            otp_logger.error(
+                "checkout_error_at_verify",
+                request_id=request_id,
+                error=exc.message,
+                code=exc.code,
+            )
+            return Response(
+                {"detail": exc.message, "code": exc.code},
+                status=exc.status,
+            )
+
+        except Exception as exc:
+            otp_logger.exception(
+                "unexpected_order_creation_error",
+                request_id=request_id,
+                error=str(exc),
+            )
+            return Response(
+                {"detail": "An unexpected error occurred. Please try again."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+        # --- Clear cart (non-critical) ---
+        if cart_key:
+            clear_cart_service(cart_key)
+
+        # --- Send order confirmation email ---
+        async_task(
+            'apps.orders.tasks.send_order_confirmation_email',
+            str(order.id),
+            task_name=f'order_confirmation_{order.order_number}'
+        )
+
+        # --- Return success ---
+        otp_logger.info(
+            "order_created_successfully",
+            order_number=order.order_number,
+            order_id=str(order.id),
+            request_id=request_id,
+        )
+
+        return Response(
+            {
+                "verified": True,
+                "order": {
+                    "id": str(order.id),
+                    "order_number": order.order_number,
+                    "status": order.status,
+                    "payment_status": order.payment_status,
+                    "payment_method": order.payment_method,
+                    "total_amount": str(order.total_amount),
+                    "created_at": order.created_at.isoformat(),
+                },
+                "message": "Order placed successfully!",
             },
             status=status.HTTP_200_OK,
         )

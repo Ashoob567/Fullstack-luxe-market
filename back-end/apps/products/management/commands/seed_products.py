@@ -22,8 +22,8 @@ class Command(BaseCommand):
 
         # Create categories
         self.stdout.write("Creating categories...")
-        watches_category, _ = Category.objects.get_or_create(name="Watches")
-        undergarments_category, _ = Category.objects.get_or_create(name="Undergarments")
+        watches_category, _ = Category.objects.get_or_create(name="Watches",defaults={"slug":"watches"})
+        undergarments_category, _ = Category.objects.get_or_create(name="Undergarments",defaults={"slug":"undergarments"})
 
         # Create Watches products
         self.stdout.write("Creating watches products...")

@@ -24,6 +24,13 @@ class Order(models.Model):
 
     # ── Identity ──────────────────────────────────────────────────────────────
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    idempotency_key = models.UUIDField(
+        unique=True,
+        null=True,
+        blank=True,
+        db_index=True,
+        help_text="Unique key to prevent duplicate orders (OTP verification flow)",
+    )
 
     # ── Customer ──────────────────────────────────────────────────────────────
     user = models.ForeignKey(

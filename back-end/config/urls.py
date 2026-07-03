@@ -5,6 +5,12 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
+from django.http import HttpResponse
+
+def prometheus_metrics(request):
+    """Expose Prometheus metrics at /metrics"""
+    return HttpResponse(generate_latest(), content_type=CONTENT_TYPE_LATEST)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -17,7 +23,9 @@ urlpatterns = [
     path('api/categories/',include('apps.products.category_urls')),#pass
     path("api/wishlist/", include("apps.wishlists.urls")),#pending
     path("api/coupons/", include("apps.coupons.urls")),#pending
-    
+
+    # Prometheus metrics endpoint
+    path('metrics/', prometheus_metrics, name='prometheus-metrics'),
 ]
 
 # Serve media files in development

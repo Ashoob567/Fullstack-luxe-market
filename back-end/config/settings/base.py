@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     'whitenoise.runserver_nostatic',
     'nested_admin',  # For nested inline admin (Color → Size)
     # Local apps
+    'apps.core',  # Core utilities (middleware, monitoring, logging)
     'apps.users',
     'apps.products',
     'apps.orders',
@@ -51,6 +52,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
+    'apps.core.middleware.RequestIDMiddleware',  # Request tracing
     'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -219,3 +221,35 @@ DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'Luxe Market <noreply@luxem
 # EMAIL_HOST_USER=your-email@gmail.com
 # EMAIL_HOST_PASSWORD=your-app-password
 # DEFAULT_FROM_EMAIL=Luxe Market <orders@luxemarket.com>
+
+# ============================================================================
+# STRUCTURED LOGGING CONFIGURATION
+# ============================================================================
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "json": {
+            "()": "pythonjsonlogger.jsonlogger.JsonFormatter",
+            "format": "%(timestamp)s %(level)s %(name)s %(message)s",
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "json",
+        },
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": "INFO",
+    },
+    "loggers": {
+        "django": {"handlers": ["console"], "level": "INFO", "propagate": False},
+        "apps": {"handlers": ["console"], "level": "DEBUG", "propagate": False},
+    },
+}
+
+# Configure structlog (must be called after LOGGING is defined)
+from config.logging import configure_logging
+configure_logging()
